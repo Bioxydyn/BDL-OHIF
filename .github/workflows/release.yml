@@ -1,0 +1,45 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Enable Yarn Workspaces
+        run: yarn config set workspaces-experimental true
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build project
+        run: yarn run build
+
+      - name: Create ZIP archive
+        run: |
+          cd platform/app/dist
+          zip -r ../../../ohif-viewer-${{ github.ref_name }}.zip .
+          cd ../../../
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ohif-viewer-${{ github.ref_name }}.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
