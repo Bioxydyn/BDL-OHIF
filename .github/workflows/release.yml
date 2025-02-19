@@ -30,7 +30,7 @@ jobs:
       - name: Create ZIP archive
         run: |
           cd platform/app/dist
-          zip -r ../../../ohif-viewer-${{ github.ref_name }}.zip .
+          export PUBLIC_URL=/static/ohif/ && zip -r ../../../ohif-viewer-${{ github.ref_name }}.zip .
           cd ../../../
 
       - name: Create Release
