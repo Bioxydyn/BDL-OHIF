@@ -25,7 +25,7 @@ jobs:
         run: yarn install
 
       - name: Build project
-        run: PUBLIC_URL=/static/ohif/ yarn run build
+        run: PUBLIC_URL=/static/ohif/ APP_CONFIG=config/default.js yarn run build
 
       - name: Create ZIP archive
         run: |

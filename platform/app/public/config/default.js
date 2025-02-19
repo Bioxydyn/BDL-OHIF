@@ -2,7 +2,7 @@
 
 window.config = {
   name: 'config/default.js',
-  routerBasename: '/static/ohif/',
+  routerBasename: '/static/ohif',
   // whiteLabeling: {},
   extensions: [],
   modes: [],
