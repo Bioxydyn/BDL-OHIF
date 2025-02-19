@@ -25,12 +25,12 @@ jobs:
         run: yarn install
 
       - name: Build project
-        run: yarn run build
+        run: export PUBLIC_URL=/static/ohif/ && yarn run build
 
       - name: Create ZIP archive
         run: |
           cd platform/app/dist
-          export PUBLIC_URL=/static/ohif/ && zip -r ../../../ohif-viewer-${{ github.ref_name }}.zip .
+          zip -r ../../../ohif-viewer-${{ github.ref_name }}.zip .
           cd ../../../
 
       - name: Create Release
