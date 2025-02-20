@@ -22,6 +22,7 @@ export default function getSegmentationPanelCustomization({ commandsManager, ser
       allowExport,
       storeSegmentation,
       onSegmentationDownload,
+      onSegmentationVfSave,
       onSegmentationDownloadRTSS,
       t,
     }) => (
@@ -61,6 +62,11 @@ export default function getSegmentationPanelCustomization({ commandsManager, ser
                 onClick={() => onSegmentationDownload(activeSegmentation.segmentationId)}
               >
                 {t('Download DICOM SEG')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onSegmentationVfSave(activeSegmentation.segmentationId)}
+              >
+                Save to VoxelFlow
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuPortal>

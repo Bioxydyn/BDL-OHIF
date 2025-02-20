@@ -62,6 +62,7 @@ interface SegmentationTableContext {
   onToggleSegmentLock: (segmentationId: string, segmentIndex: number) => void;
   onToggleSegmentationRepresentationVisibility: (segmentationId: string, type: string) => void;
   onSegmentationDownload: (segmentationId: string) => void;
+  onSegmentationVfSave: (segmentationId: string) => void;
   storeSegmentation: (segmentationId: string) => void;
   onSegmentationDownloadRTSS: (segmentationId: string) => void;
   setStyle: (

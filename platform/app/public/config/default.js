@@ -2,8 +2,23 @@
 
 window.config = {
   name: 'config/default.js',
-  routerBasename: '/static/ohif',
-  // whiteLabeling: {},
+  //routerBasename: '/static/ohif',
+  routerBasename: '/',
+  whiteLabeling: {
+    createLogoComponentFn: function(React) {
+      return React.createElement(
+        'a',
+        {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          className: 'text-white underline',
+          href: 'https://app.voxelflow.io',
+        },
+        React.createElement('h5', {}, 'VoxelFlow Viewer')
+      );
+    },
+  },
+  segmentationVFSaveURL: 'http://localhost:4975/segmentation',
   extensions: [],
   modes: [],
   customizationService: {},
