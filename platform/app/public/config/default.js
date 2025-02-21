@@ -3,7 +3,7 @@
 window.config = {
   name: 'config/default.js',
   //routerBasename: '/static/ohif',
-  routerBasename: '/',
+  routerBasename: '/ohif',
   whiteLabeling: {
     createLogoComponentFn: function(React) {
       return React.createElement(

@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAppConfig } from '@state';
 
 import { Button, ButtonEnums } from '@ohif/ui';
+import { publicUrl } from '@ohif/app';
+
 
 function DataSourceSelector() {
   const [appConfig] = useAppConfig();
@@ -35,7 +37,7 @@ function DataSourceSelector() {
                     className={classnames('ml-2')}
                     onClick={() => {
                       navigate({
-                        pathname: '/',
+                        pathname: publicUrl,
                         search: `datasources=${ds.sourceName}`,
                       });
                     }}
