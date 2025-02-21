@@ -20,6 +20,7 @@ const SegmentationGroupTable = ({
   onSegmentationClick = () => {},
   onSegmentationDelete = () => {},
   onSegmentationDownload = () => {},
+  onSegmentationVfSave = () => {},
   onSegmentationDownloadRTSS = () => {},
   storeSegmentation = () => {},
   onSegmentClick = () => {},
@@ -114,6 +115,7 @@ const SegmentationGroupTable = ({
                 onSegmentationDelete={onSegmentationDelete}
                 onSegmentationEdit={onSegmentationEdit}
                 onSegmentationDownload={onSegmentationDownload}
+                onSegmentationVfSave={onSegmentationVfSave}
                 onSegmentationDownloadRTSS={onSegmentationDownloadRTSS}
                 storeSegmentation={storeSegmentation}
                 onSegmentationAdd={onSegmentationAdd}
@@ -192,6 +194,7 @@ SegmentationGroupTable.propTypes = {
   onSegmentationClick: PropTypes.func.isRequired,
   onSegmentationDelete: PropTypes.func.isRequired,
   onSegmentationDownload: PropTypes.func.isRequired,
+  onSegmentationVfSave: PropTypes.func.isRequired,
   onSegmentationDownloadRTSS: PropTypes.func.isRequired,
   storeSegmentation: PropTypes.func.isRequired,
   onSegmentClick: PropTypes.func.isRequired,

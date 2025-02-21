@@ -65,6 +65,10 @@ export default function PanelSegmentation({
       commandsManager.run('downloadSegmentation', { segmentationId });
     },
 
+    onSegmentationVfSave: segmentationId => {
+      commandsManager.run('exportVFSegmentation', { segmentationId });
+    },
+
     storeSegmentation: async segmentationId => {
       commandsManager.run('storeSegmentation', { segmentationId });
     },
@@ -209,6 +213,7 @@ export default function PanelSegmentation({
           handlers.onToggleSegmentationRepresentationVisibility
         }
         onSegmentationDownload={handlers.onSegmentationDownload}
+        onSegmentationVfSave={handlers.onSegmentationVfSave}
         storeSegmentation={handlers.storeSegmentation}
         onSegmentationDownloadRTSS={handlers.onSegmentationDownloadRTSS}
         setStyle={handlers.setStyle}

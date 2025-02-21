@@ -9,10 +9,13 @@ import {
 } from '@cornerstonejs/tools';
 import { adaptersRT, helpers, adaptersSEG } from '@cornerstonejs/adapters';
 import { classes, DicomMetadataStore } from '@ohif/core';
-
 import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+
+import { data } from "dcmjs";
+import { Buffer } from "buffer";
+const { datasetToDict } = data;
 
 const { segmentation: segmentationUtils } = utilities;
 
@@ -40,6 +43,40 @@ const {
 } = adaptersRT;
 
 const { downloadDICOMData } = helpers;
+
+interface DicomDataset {
+    _meta?: unknown;
+    // other properties
+}
+
+function exportVFDICOMData(
+    bufferOrDataset: ArrayBuffer | DicomDataset,
+    filename: string,
+    postUrl: string
+) {
+    let blob;
+    if (bufferOrDataset instanceof ArrayBuffer) {
+        blob = new Blob([bufferOrDataset], { type: "application/dicom" });
+    } else {
+        if (!bufferOrDataset._meta) {
+            throw new Error("Dataset must have a _meta property");
+        }
+
+        const buffer = Buffer.from(datasetToDict(bufferOrDataset).write());
+        blob = new Blob([buffer], { type: "application/dicom" });
+    }
+
+    const formData = new FormData();
+    formData.append("file", blob, filename);
+    fetch(postUrl, {
+        method: "POST",
+        body: formData,
+    }).then((response) => {
+        if (!response.ok) {
+            throw new Error("Failed to upload segmentation");
+        }
+    });
+}
 
 const commandsModule = ({
   servicesManager,
@@ -213,6 +250,16 @@ const commandsModule = ({
 
       downloadDICOMData(generatedSegmentation.dataset, `${segmentationInOHIF.label}`);
     },
+
+    exportVFSegmentation: ({ segmentationId }) => {
+      const segmentationInOHIF = segmentationService.getSegmentation(segmentationId);
+      const generatedSegmentation = actions.generateSegmentation({
+        segmentationId,
+      });
+      const url = window.config.segmentationVFSaveURL;
+      exportVFDICOMData(generatedSegmentation.dataset, `${segmentationInOHIF.label}`, url);
+    },
+
     /**
      * Stores a segmentation based on the provided segmentationId into a specified data source.
      * The SeriesDescription is derived from user input or defaults to the segmentation label,
@@ -354,6 +401,9 @@ const commandsModule = ({
     },
     downloadSegmentation: {
       commandFn: actions.downloadSegmentation,
+    },
+    exportVFSegmentation: {
+      commandFn: actions.exportVFSegmentation,
     },
     storeSegmentation: {
       commandFn: actions.storeSegmentation,

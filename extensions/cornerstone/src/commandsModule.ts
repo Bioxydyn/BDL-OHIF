@@ -999,6 +999,15 @@ function commandsModule({
     },
 
     /**
+     * POSTs a segmentation to the VoxelFlow host server
+     * @param props.segmentationId - The ID of the segmentation to send
+     */
+    exportVFSegmentationCommand: ({ segmentationId }) => {
+      const { segmentationService } = servicesManager.services;
+      segmentationService.downloadSegmentation(segmentationId);
+    },
+
+    /**
      * Stores a segmentation and shows it in the viewport
      * @param props.segmentationId - The ID of the segmentation to store
      */
@@ -1405,6 +1414,9 @@ function commandsModule({
     },
     downloadSegmentation: {
       commandFn: actions.downloadSegmentationCommand,
+    },
+    exportVFSegmentation: {
+      commandFn: actions.exportVFSegmentationCommand,
     },
     storeSegmentation: {
       commandFn: actions.storeSegmentationCommand,

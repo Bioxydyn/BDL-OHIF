@@ -18,6 +18,7 @@ const SegmentationGroupTableExpanded = ({
   onSegmentationClick = () => {},
   onSegmentationDelete = () => {},
   onSegmentationDownload = () => {},
+  onSegmentationVfSave = () => {},
   onSegmentationDownloadRTSS = () => {},
   storeSegmentation = () => {},
   onSegmentClick = () => {},
@@ -105,6 +106,7 @@ const SegmentationGroupTableExpanded = ({
                       onSegmentationEdit={onSegmentationEdit}
                       onSegmentationDelete={onSegmentationDelete}
                       onSegmentationDownload={onSegmentationDownload}
+                      onSegmentationVfSave={onSegmentationVfSave}
                       onSegmentationDownloadRTSS={onSegmentationDownloadRTSS}
                       storeSegmentation={storeSegmentation}
                       showAddSegment={showAddSegment}
@@ -155,6 +157,7 @@ SegmentationGroupTableExpanded.propTypes = {
   onSegmentationClick: PropTypes.func.isRequired,
   onSegmentationDelete: PropTypes.func.isRequired,
   onSegmentationDownload: PropTypes.func.isRequired,
+  onSegmentationVfSave: PropTypes.func.isRequired,
   onSegmentationDownloadRTSS: PropTypes.func,
   storeSegmentation: PropTypes.func.isRequired,
   onSegmentClick: PropTypes.func.isRequired,
