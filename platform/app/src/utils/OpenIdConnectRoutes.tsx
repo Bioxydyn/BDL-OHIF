@@ -5,6 +5,7 @@ import CallbackPage from '../routes/CallbackPage';
 import SignoutCallbackComponent from '../routes/SignoutCallbackComponent';
 import LegacyClient from './legacyOIDCClient';
 import NextClient from './nextOIDCClient';
+import { publicUrl } from '@ohif/app';
 
 function _isAbsoluteUrl(url) {
   return url.includes('http://') || url.includes('https://');
@@ -78,7 +79,7 @@ function LoginComponent(userManager) {
       sessionStorage.setItem('ohif-redirect-to', JSON.stringify(ohifRedirectTo));
     } else {
       const ohifRedirectTo = {
-        pathname: '/',
+        pathname: publicUrl,
       };
       sessionStorage.setItem('ohif-redirect-to', JSON.stringify(ohifRedirectTo));
     }
