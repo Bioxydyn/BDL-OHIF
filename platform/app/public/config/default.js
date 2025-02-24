@@ -18,7 +18,7 @@ window.config = {
       );
     },
   },
-  segmentationVFSaveURL: 'http://localhost:4975/segmentation',
+  segmentationVFSaveURL: '/api/segmentation',
   extensions: [],
   modes: [],
   customizationService: {},

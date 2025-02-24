@@ -26,6 +26,7 @@ export const SegmentationHeader: React.FC<{
     onSegmentationEdit,
     onSegmentationDelete,
     onSegmentationDownload,
+    onSegmentationVfSave,
     onSegmentationDownloadRTSS,
     storeSegmentation,
   } = useSegmentationTableContext('SegmentationHeader');
@@ -107,7 +108,7 @@ export const SegmentationHeader: React.FC<{
                   <DropdownMenuItem
                     onClick={e => {
                       e.stopPropagation();
-                      onSegmentationDownload(segmentation.segmentationId);
+                      onSegmentationVfSave(segmentation.segmentationId);
                     }}
                   >
                     {t('Export to VoxelFlow')}

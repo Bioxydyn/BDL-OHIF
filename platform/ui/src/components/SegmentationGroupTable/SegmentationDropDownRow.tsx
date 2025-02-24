@@ -11,6 +11,7 @@ function SegmentationDropDownRow({
   onToggleSegmentationVisibility,
   onSegmentationEdit,
   onSegmentationDownload,
+  onSegmentationVfSave,
   onSegmentationDownloadRTSS,
   storeSegmentation,
   onSegmentationDelete,
@@ -92,7 +93,7 @@ function SegmentationDropDownRow({
               {
                 title: t('Export to VoxelFlow'),
                 onClick: () => {
-                  onSegmentationDownload(activeSegmentation.id);
+                  onSegmentationVfSave(activeSegmentation.id);
                 },
               },
               {
@@ -180,6 +181,7 @@ SegmentationDropDownRow.propTypes = {
   onToggleSegmentationVisibility: PropTypes.func,
   onSegmentationEdit: PropTypes.func,
   onSegmentationDownload: PropTypes.func,
+  onSegmentationVfSave: PropTypes.func,
   onSegmentationDownloadRTSS: PropTypes.func,
   storeSegmentation: PropTypes.func,
   onSegmentationDelete: PropTypes.func,
