@@ -468,7 +468,7 @@ const commandsModule = ({
           document.msExitFullscreen()
         }
       }
-    }
+    },
 
     /**
      * Toggle viewport overlay (the information panel shown on the four corners
