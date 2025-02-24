@@ -7,6 +7,7 @@
   "Display inactive segmentations": "Display inactive segmentations",
   "Export DICOM SEG": "Export DICOM SEG",
   "Download DICOM SEG": "Download DICOM SEG",
+  "Export to VoxelFlow": "Export to VoxelFlow",
   "Download DICOM RTSTRUCT": "Download DICOM RTSTRUCT",
   "Fill": "Fill",
   "Inactive segmentations": "Inactive segmentations",

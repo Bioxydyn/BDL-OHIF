@@ -90,6 +90,12 @@ function SegmentationDropDownRow({
                 },
               },
               {
+                title: t('Export to VoxelFlow'),
+                onClick: () => {
+                  onSegmentationDownload(activeSegmentation.id);
+                },
+              },
+              {
                 title: t('Download DICOM RTSTRUCT'),
                 onClick: () => {
                   onSegmentationDownloadRTSS(activeSegmentation.id);

@@ -107,6 +107,9 @@ export const SegmentationSelectorHeader: React.FC<{ children?: React.ReactNode }
                 <DropdownMenuItem onClick={() => onSegmentationDownload(activeSegmentation.id)}>
                   {t('Download DICOM SEG')}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onSegmentationDownload(activeSegmentation.id)}>
+                  {t('Export to VoxelFlow')}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onSegmentationDownloadRTSS(activeSegmentation.id)}>
                   {t('Download DICOM RTSTRUCT')}
                 </DropdownMenuItem>

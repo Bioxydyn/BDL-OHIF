@@ -107,6 +107,14 @@ export const SegmentationHeader: React.FC<{
                   <DropdownMenuItem
                     onClick={e => {
                       e.stopPropagation();
+                      onSegmentationDownload(segmentation.segmentationId);
+                    }}
+                  >
+                    {t('Export to VoxelFlow')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={e => {
+                      e.stopPropagation();
                       onSegmentationDownloadRTSS(segmentation.segmentationId);
                     }}
                   >

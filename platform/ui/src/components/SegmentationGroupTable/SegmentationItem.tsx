@@ -87,6 +87,12 @@ function SegmentationItem({
                   },
                 },
                 {
+                  title: t('Export to VoxelFlow'),
+                  onClick: () => {
+                    onSegmentationVfSave(activeSegmentation.id);
+                  },
+                },
+                {
                   title: t('Download DICOM RTSTRUCT'),
                   onClick: () => {
                     onSegmentationDownloadRTSS(segmentation.id);

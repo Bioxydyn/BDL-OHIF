@@ -238,6 +238,7 @@ export default function TMTVPatterns() {
                                   <DropdownMenuSubContent>
                                     <DropdownMenuItem>Export DICOM SEG</DropdownMenuItem>
                                     <DropdownMenuItem>Download DICOM SEG</DropdownMenuItem>
+                                    <DropdownMenuItem>Export to VoxelFlow</DropdownMenuItem>
                                     <DropdownMenuItem>Download DICOM RTSTRUCT</DropdownMenuItem>
                                   </DropdownMenuSubContent>
                                 </DropdownMenuPortal>
@@ -328,6 +329,7 @@ export default function TMTVPatterns() {
                                   <DropdownMenuSubContent>
                                     <DropdownMenuItem>Export DICOM SEG</DropdownMenuItem>
                                     <DropdownMenuItem>Download DICOM SEG</DropdownMenuItem>
+                                    <DropdownMenuItem>Export to VoxelFlow</DropdownMenuItem>
                                     <DropdownMenuItem>Download DICOM RTSTRUCT</DropdownMenuItem>
                                   </DropdownMenuSubContent>
                                 </DropdownMenuPortal>
