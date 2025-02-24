@@ -283,6 +283,13 @@ const toolbarButtons: Button[] = [
           commands: setToolActiveToolbar,
           evaluate: 'evaluate.cornerstoneTool',
         }),
+        createButton({
+          id: 'GoFullscreen',
+          icon: 'layout-common-1x1',
+          label: 'View Fullscreen',
+          tooltip: 'View Fullscreen',
+          commands: 'openDICOMTagViewer',
+        }),
       ],
     },
   },

@@ -21,6 +21,9 @@ window.config = {
   segmentationVFSaveURL: '/api/segmentation',
   extensions: [],
   modes: [],
+  investigationalUseDialog: {
+    option: 'never',
+  },
   customizationService: {},
   showStudyList: true,
   // some windows systems have issues with more than 3 web workers

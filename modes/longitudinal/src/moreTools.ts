@@ -262,6 +262,13 @@ const moreTools = [
             },
           ],
         }),
+        createButton({
+          id: 'GoFullscreen',
+          icon: 'layout-common-1x1',
+          label: 'View Fullscreen',
+          tooltip: 'View Fullscreen',
+          commands: 'toggleFullscreen',
+        }),
       ],
     },
   },

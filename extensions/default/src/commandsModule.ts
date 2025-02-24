@@ -445,6 +445,31 @@ const commandsModule = ({
       });
     },
 
+    toggleFullscreen: () => {
+      const root = document.documentElement;
+      if (!root && !document.mozFullScreen && !document.webkitIsFullScreen && !document.msFullscreenElement) {
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen()
+        } else if (elem.mozRequestFullScreen) {
+          elem.mozRequestFullScreen()
+        } else if (elem.webkitRequestFullscreen) {
+          elem.webkitRequestFullscreen()
+        } else if (elem.msRequestFullscreen) {
+          elem.msRequestFullscreen()
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen()
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen()
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen()
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen()
+        }
+      }
+    }
+
     /**
      * Toggle viewport overlay (the information panel shown on the four corners
      * of the viewport)
@@ -591,6 +616,9 @@ const commandsModule = ({
     },
     openDICOMTagViewer: {
       commandFn: actions.openDICOMTagViewer,
+    },
+    toggleFullscreen: {
+      commandFn: actions.toggleFullscreen,
     },
     updateViewportDisplaySet: {
       commandFn: actions.updateViewportDisplaySet,
