@@ -57,23 +57,90 @@ const studyDateItem = {
     formatDate(referenceInstance.StudyDate),
 };
 
-const seriesDescriptionItem = {
-  id: 'SeriesDescription',
+const clinicalTrialSubjectIDItem = {
+  id: 'ClinicalTrialSubjectID',
   customizationType: 'ohif.overlayItem',
   label: '',
-  title: 'Series description',
-  condition: ({ referenceInstance }) => {
-    return referenceInstance && referenceInstance.SeriesDescription;
-  },
-  contentF: ({ referenceInstance }) => referenceInstance.SeriesDescription,
+  title: 'Clinical Trial Subject ID',
+  condition: ({ referenceInstance }) => referenceInstance?.ClinicalTrialSubjectID,
+  contentF: ({ referenceInstance }) => referenceInstance.ClinicalTrialSubjectID,
+};
+
+const clinicalTrialTimePointIDItem = {
+  id: 'ClinicalTrialTimePointID',
+  customizationType: 'ohif.overlayItem',
+  label: '',
+  title: 'Clinical Trial Time Point ID',
+  condition: ({ referenceInstance }) => referenceInstance?.ClinicalTrialTimePointID,
+  contentF: ({ referenceInstance }) => referenceInstance.ClinicalTrialTimePointID,
 };
 
 const topLeftItems = {
   id: 'cornerstoneOverlayTopLeft',
-  items: [studyDateItem, seriesDescriptionItem],
+  items: [studyDateItem, clinicalTrialSubjectIDItem, clinicalTrialTimePointIDItem],
 };
 
-const topRightItems = { id: 'cornerstoneOverlayTopRight', items: [] };
+const sliceThicknessItem = {
+  id: 'SliceThickness',
+  customizationType: 'ohif.overlayItem',
+  label: 'Thickness: ',
+  title: 'Slice Thickness',
+  condition: ({ instance }) => instance?.SliceThickness,
+  contentF: ({ instance }) => {
+    if (instance && instance.SliceThickness) {
+      return `${parseFloat(instance.SliceThickness).toFixed(2)}mm`;
+    }
+    return '';
+  },
+};
+
+const spacingBetweenSlicesItem = {
+  id: 'SpacingBetweenSlices',
+  customizationType: 'ohif.overlayItem',
+  label: 'Spacing: ',
+  title: 'Spacing Between Slices',
+  condition: ({ instance }) => instance?.SpacingBetweenSlices,
+  contentF: ({ instance }) => {
+    if (instance && instance.SpacingBetweenSlices) {
+      return `${parseFloat(instance.SpacingBetweenSlices).toFixed(2)}mm`;
+    }
+    return '';
+  },
+};
+
+const pixelSpacingItem = {
+  id: 'PixelSpacing',
+  customizationType: 'ohif.overlayItem',
+  label: 'Pixel: ',
+  title: 'Pixel Spacing',
+  condition: ({ instance }) => instance?.PixelSpacing && Array.isArray(instance.PixelSpacing),
+  contentF: ({ instance }) => {
+    if (instance && instance.PixelSpacing && Array.isArray(instance.PixelSpacing)) {
+      const [row, col] = instance.PixelSpacing;
+      return `${parseFloat(row).toFixed(2)} x ${parseFloat(col).toFixed(2)}mm`;
+    }
+    return '';
+  },
+};
+
+const imageDimensionsItem = {
+  id: 'ImageDimensions',
+  customizationType: 'ohif.overlayItem',
+  label: 'Dim: ',
+  title: 'Image Dimensions',
+  condition: ({ instance }) => instance?.Rows && instance?.Columns,
+  contentF: ({ instance }) => {
+    if (instance && instance.Rows && instance.Columns) {
+      return `${instance.Columns} x ${instance.Rows}`;
+    }
+    return '';
+  },
+};
+
+const topRightItems = {
+  id: 'cornerstoneOverlayTopRight',
+  items: [sliceThicknessItem, spacingBetweenSlicesItem, pixelSpacingItem, imageDimensionsItem],
+};
 
 const bottomLeftItems = {
   id: 'cornerstoneOverlayBottomLeft',
@@ -93,14 +160,61 @@ const bottomLeftItems = {
   ],
 };
 
+const instanceNumberWithZItem = {
+  id: 'InstanceNumberWithZ',
+  customizationType: 'ohif.overlayItem',
+  title: 'Instance Number with Z Position',
+  contentF: ({ instance, instanceNumber, imageSliceData }) => {
+    let content = '';
+
+    // Get the standard instance number display
+    if (instanceNumber !== undefined && instanceNumber !== null) {
+      const { imageIndex, numberOfSlices } = imageSliceData;
+      content = `I: ${instanceNumber} (${imageIndex + 1}/${numberOfSlices})`;
+    }
+
+    // Add Z position if available
+    if (instance && instance.ImagePositionPatient && Array.isArray(instance.ImagePositionPatient)) {
+      const zPosition = instance.ImagePositionPatient[2];
+      if (zPosition !== undefined) {
+        content += ` Z: ${parseFloat(zPosition).toFixed(2)}mm`;
+      }
+    }
+
+    return content;
+  },
+};
+
+const fieldOfViewItem = {
+  id: 'FieldOfView',
+  customizationType: 'ohif.overlayItem',
+  label: '',
+  title: 'Field of View',
+  condition: ({ instance }) =>
+    instance?.PixelSpacing &&
+    Array.isArray(instance.PixelSpacing) &&
+    instance?.Rows &&
+    instance?.Columns,
+  contentF: ({ instance }) => {
+    if (
+      instance &&
+      instance.PixelSpacing &&
+      Array.isArray(instance.PixelSpacing) &&
+      instance.Rows &&
+      instance.Columns
+    ) {
+      const [rowSpacing, colSpacing] = instance.PixelSpacing;
+      const fovX = (instance.Columns * parseFloat(colSpacing)).toFixed(0);
+      const fovY = (instance.Rows * parseFloat(rowSpacing)).toFixed(0);
+      return `${fovX} x ${fovY} mm FOV`;
+    }
+    return '';
+  },
+};
+
 const bottomRightItems = {
   id: 'cornerstoneOverlayBottomRight',
-  items: [
-    {
-      id: 'InstanceNumber',
-      customizationType: 'ohif.overlayItem.instanceNumber',
-    },
-  ],
+  items: [instanceNumberWithZItem, fieldOfViewItem],
 };
 
 /**
