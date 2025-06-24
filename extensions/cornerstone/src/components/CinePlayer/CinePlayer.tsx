@@ -202,15 +202,23 @@ function RenderCinePlayer({
 
     const { volumeId, timePointIndex, numTimePoints, splittingTag } = dynamicInfo || {};
     const volume = cache.getVolume(volumeId, true);
-    volume.timePointIndex = timePointIndex;
+
+    // Check if volume exists before trying to set timePointIndex
+    if (volume) {
+      (volume as any).timePointIndex = timePointIndex;
+    }
 
     setDynamicInfo({ volumeId, timePointIndex, numTimePoints, label: splittingTag });
-  }, []);
+  }, [dynamicInfo]);
 
   const updateDynamicInfo = useCallback(props => {
     const { volumeId, timePointIndex } = props;
     const volume = cache.getVolume(volumeId, true);
-    volume.timePointIndex = timePointIndex;
+
+    // Check if volume exists before trying to set timePointIndex
+    if (volume) {
+      (volume as any).timePointIndex = timePointIndex;
+    }
   }, []);
 
   return (
