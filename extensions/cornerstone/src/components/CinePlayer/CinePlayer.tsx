@@ -39,7 +39,7 @@ function WrappedCinePlayer({
     const { viewports } = viewportGridService.getState();
     const { displaySetInstanceUIDs } = viewports.get(viewportId);
     let frameRate = 24;
-    let isPlaying = cines[viewportId]?.isPlaying || false;
+    let isPlaying = cines[viewportId]?.isPlaying || true; // Auto-play when cine opens
     displaySetInstanceUIDs.forEach(displaySetInstanceUID => {
       const displaySet = displaySetService.getDisplaySetByUID(displaySetInstanceUID);
 
