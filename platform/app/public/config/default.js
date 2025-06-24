@@ -5,7 +5,7 @@ window.config = {
   //routerBasename: '/static/ohif',
   routerBasename: '/api/ohif',
   whiteLabeling: {
-    createLogoComponentFn: function(React) {
+    createLogoComponentFn: function (React) {
       return React.createElement(
         'a',
         {
@@ -246,6 +246,7 @@ window.config = {
     { commandName: 'resetViewport', label: 'Reset', keys: ['space'] },
     { commandName: 'nextImage', label: 'Next Image', keys: ['down'] },
     { commandName: 'previousImage', label: 'Previous Image', keys: ['up'] },
+    { commandName: 'toggleCine', label: 'Toggle Cine Player', keys: ['c'] },
     // {
     //   commandName: 'previousViewportDisplaySet',
     //   label: 'Previous Series',
