@@ -75,9 +75,33 @@ const clinicalTrialTimePointIDItem = {
   contentF: ({ referenceInstance }) => referenceInstance.ClinicalTrialTimePointID,
 };
 
+const seriesDescriptionItem = {
+  id: 'SeriesDescription',
+  customizationType: 'ohif.overlayItem',
+  label: '',
+  title: 'Series Description',
+  condition: ({ referenceInstance }) => referenceInstance?.SeriesDescription,
+  contentF: ({ referenceInstance }) => referenceInstance.SeriesDescription,
+};
+
+const clinicalTrialSiteIDItem = {
+  id: 'ClinicalTrialSiteID',
+  customizationType: 'ohif.overlayItem',
+  label: 'Site: ',
+  title: 'Clinical Trial Site ID',
+  condition: ({ referenceInstance }) => referenceInstance?.ClinicalTrialSiteID,
+  contentF: ({ referenceInstance }) => referenceInstance.ClinicalTrialSiteID,
+};
+
 const topLeftItems = {
   id: 'cornerstoneOverlayTopLeft',
-  items: [studyDateItem, clinicalTrialSubjectIDItem, clinicalTrialTimePointIDItem],
+  items: [
+    studyDateItem,
+    clinicalTrialSubjectIDItem,
+    clinicalTrialTimePointIDItem,
+    seriesDescriptionItem,
+    clinicalTrialSiteIDItem,
+  ],
 };
 
 const sliceThicknessItem = {
@@ -137,9 +161,44 @@ const imageDimensionsItem = {
   },
 };
 
+const numberOfPhasesItem = {
+  id: 'NumberOfPhases',
+  customizationType: 'ohif.overlayItem',
+  label: 'Phases: ',
+  title: 'Number of Phases',
+  condition: ({ instance }) => instance?.NumberOfPhases,
+  contentF: ({ instance }) => {
+    if (instance && instance.NumberOfPhases) {
+      return `${instance.NumberOfPhases}`;
+    }
+    return '';
+  },
+};
+
+const inversionTimeItem = {
+  id: 'InversionTime',
+  customizationType: 'ohif.overlayItem',
+  label: 'TI: ',
+  title: 'Inversion Time',
+  condition: ({ instance }) => instance?.InversionTime,
+  contentF: ({ instance }) => {
+    if (instance && instance.InversionTime) {
+      return `${parseFloat(instance.InversionTime).toFixed(1)}ms`;
+    }
+    return '';
+  },
+};
+
 const topRightItems = {
   id: 'cornerstoneOverlayTopRight',
-  items: [sliceThicknessItem, spacingBetweenSlicesItem, pixelSpacingItem, imageDimensionsItem],
+  items: [
+    sliceThicknessItem,
+    spacingBetweenSlicesItem,
+    pixelSpacingItem,
+    imageDimensionsItem,
+    numberOfPhasesItem,
+    inversionTimeItem,
+  ],
 };
 
 const bottomLeftItems = {
@@ -160,28 +219,17 @@ const bottomLeftItems = {
   ],
 };
 
-const instanceNumberWithZItem = {
-  id: 'InstanceNumberWithZ',
+const instanceNumberItem = {
+  id: 'InstanceNumber',
   customizationType: 'ohif.overlayItem',
-  title: 'Instance Number with Z Position',
-  contentF: ({ instance, instanceNumber, imageSliceData }) => {
-    let content = '';
-
-    // Get the standard instance number display
+  title: 'Instance Number',
+  contentF: ({ instanceNumber, imageSliceData }) => {
+    // Get the standard instance number display without Z position
     if (instanceNumber !== undefined && instanceNumber !== null) {
       const { imageIndex, numberOfSlices } = imageSliceData;
-      content = `I: ${instanceNumber} (${imageIndex + 1}/${numberOfSlices})`;
+      return `I: ${instanceNumber} (${imageIndex + 1}/${numberOfSlices})`;
     }
-
-    // Add Z position if available
-    if (instance && instance.ImagePositionPatient && Array.isArray(instance.ImagePositionPatient)) {
-      const zPosition = instance.ImagePositionPatient[2];
-      if (zPosition !== undefined) {
-        content += ` Z: ${parseFloat(zPosition).toFixed(2)}mm`;
-      }
-    }
-
-    return content;
+    return '';
   },
 };
 
@@ -214,7 +262,7 @@ const fieldOfViewItem = {
 
 const bottomRightItems = {
   id: 'cornerstoneOverlayBottomRight',
-  items: [instanceNumberWithZItem, fieldOfViewItem],
+  items: [instanceNumberItem, fieldOfViewItem],
 };
 
 /**
