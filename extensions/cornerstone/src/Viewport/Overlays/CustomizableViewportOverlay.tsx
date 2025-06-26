@@ -161,15 +161,15 @@ const imageDimensionsItem = {
   },
 };
 
-const numberOfPhasesItem = {
-  id: 'NumberOfPhases',
+const cardiacNumberOfImagesItem = {
+  id: 'CardiacNumberOfImages',
   customizationType: 'ohif.overlayItem',
-  label: 'Phases: ',
-  title: 'Number of Phases',
-  condition: ({ instance }) => instance?.NumberOfPhases,
+  label: 'Cardiac: ',
+  title: 'Cardiac Number of Images',
+  condition: ({ instance }) => instance?.CardiacNumberOfImages,
   contentF: ({ instance }) => {
-    if (instance && instance.NumberOfPhases) {
-      return `${instance.NumberOfPhases}`;
+    if (instance && instance.CardiacNumberOfImages) {
+      return `${instance.CardiacNumberOfImages}`;
     }
     return '';
   },
@@ -196,7 +196,7 @@ const topRightItems = {
     spacingBetweenSlicesItem,
     pixelSpacingItem,
     imageDimensionsItem,
-    numberOfPhasesItem,
+    cardiacNumberOfImagesItem,
     inversionTimeItem,
   ],
 };
