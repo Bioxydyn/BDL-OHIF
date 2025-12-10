@@ -10,7 +10,7 @@ import { extensionManager } from '../../App.tsx';
 import useSearchParams from '../../hooks/useSearchParams.ts';
 
 import { Icon, Button, LoadingIndicatorProgress } from '@ohif/ui';
-import { Unzip, unzipSync } from 'fflate';
+import { unzipSync } from 'fflate';
 
 const hudId = 'ohif-local-download-hud';
 
@@ -74,6 +74,15 @@ const ensureHud = () => {
 const sanitizeEntryName = (name: string) =>
   name.replace(/^[/\\]+/, '').replace(/[\\/]+/g, '__') || 'study';
 
+const toError = (value: unknown, fallbackMessage: string) => {
+  if (value instanceof Error) {
+    return value;
+  }
+
+  const str = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+  return new Error(`${fallbackMessage}${str ? `: ${str}` : ''}`);
+};
+
 async function downloadAndExtractZip(
   url: string,
   handlers: {
@@ -97,11 +106,43 @@ async function downloadAndExtractZip(
   }
 
   const total = Number(response.headers.get('Content-Length')) || 0;
+  let buffer: Uint8Array;
 
-  // Fallback for environments without readable streams.
-  if (!response.body?.getReader) {
-    const buffer = new Uint8Array(await response.arrayBuffer());
-    onProgress?.(buffer.byteLength, total || buffer.byteLength);
+  try {
+    if (response.body?.getReader) {
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { value, done } = await reader.read();
+        if (value?.byteLength) {
+          chunks.push(value);
+          received += value.byteLength;
+          onProgress?.(received, total);
+        }
+        if (done) {
+          break;
+        }
+      }
+
+      buffer = new Uint8Array(received);
+      let offset = 0;
+      for (const c of chunks) {
+        buffer.set(c, offset);
+        offset += c.byteLength;
+      }
+    } else {
+      const ab = await response.arrayBuffer();
+      buffer = new Uint8Array(ab);
+      onProgress?.(buffer.byteLength, total || buffer.byteLength);
+    }
+  } catch (err) {
+    throw toError(err, 'Error while downloading archive');
+  }
+
+  try {
     const entries = unzipSync(buffer);
     Object.entries(entries).forEach(([entryName, data]) => {
       if (entryName.endsWith('/') || entryName.startsWith('__MACOSX/')) {
@@ -113,76 +154,8 @@ async function downloadAndExtractZip(
       });
       onFile(file);
     });
-    return;
-  }
-
-  const reader = response.body.getReader();
-  const pending: Promise<void>[] = [];
-  let unzipError: Error | undefined;
-  let received = 0;
-
-  const unzipper = new Unzip((err, file) => {
-    if (err) {
-      unzipError = err;
-      return;
-    }
-
-    if (!file || file.name.endsWith('/') || file.name.startsWith('__MACOSX/')) {
-      file?.start?.();
-      return;
-    }
-
-    const entryPromise = new Promise<void>((resolve, reject) => {
-      const chunks: Uint8Array[] = [];
-      file.ondata = (dataErr, data, final) => {
-        if (dataErr) {
-          reject(dataErr);
-          return;
-        }
-
-        if (data) {
-          chunks.push(data);
-        }
-
-        if (final) {
-          try {
-            const fileBlob = new Blob(chunks, { type: 'application/dicom' });
-            const zippedFile = new File([fileBlob], sanitizeEntryName(file.name), {
-              type: 'application/dicom',
-              lastModified: Date.now(),
-            });
-            onFile(zippedFile);
-            resolve();
-          } catch (creationErr) {
-            reject(creationErr);
-          }
-        }
-      };
-    });
-
-    pending.push(entryPromise);
-    file.start();
-  });
-
-  // Stream bytes into the unzipper.
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { value, done } = await reader.read();
-    if (value?.byteLength) {
-      received += value.byteLength;
-      onProgress?.(received, total);
-      unzipper.push(value, false);
-    }
-    if (done) {
-      unzipper.push(new Uint8Array(0), true);
-      break;
-    }
-  }
-
-  await Promise.all(pending);
-
-  if (unzipError) {
-    throw unzipError;
+  } catch (err) {
+    throw toError(err, 'Failed to unzip archive');
   }
 }
 
@@ -375,8 +348,9 @@ function Local({ modePath }: LocalProps) {
         if (abortController.signal.aborted) {
           return;
         }
-        console.error('Failed to load data from presigned URL', err);
-        window.alert('Could not load the study from loadDataFrom. Please try again later.');
+        const errorObj = toError(err, 'Unknown error');
+        console.error('Failed to load data from presigned URL', errorObj, errorObj.stack);
+        window.alert(`Could not load the study from loadDataFrom.\n${errorObj.message}`);
         setDropInitiated(false);
       })
       .finally(() => {
