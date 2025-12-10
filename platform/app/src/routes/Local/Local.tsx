@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import classnames from 'classnames';
 import { useNavigate } from 'react-router-dom';
 import { DicomMetadataStore, MODULE_TYPES } from '@ohif/core';
@@ -205,9 +205,12 @@ const getLoadButton = (onDrop, text, isDir) => {
             {text}
             {isDir ? (
               <input
-                {...getInputProps()}
-                webkitdirectory="true"
-                mozdirectory="true"
+                {...({
+                  ...getInputProps(),
+                  // Non-standard attributes are required for directory selection.
+                  webkitdirectory: 'true',
+                  mozdirectory: 'true',
+                } as React.InputHTMLAttributes<HTMLInputElement>)}
               />
             ) : (
               <input {...getInputProps()} />
@@ -232,53 +235,77 @@ function Local({ modePath }: LocalProps) {
   const lastLoadedUrlRef = useRef<string | null>(null);
 
   // Initializing the dicom local dataSource
-  const dataSourceModules = extensionManager.modules[MODULE_TYPES.DATA_SOURCE];
-  const localDataSources = dataSourceModules.reduce((acc, curr) => {
-    const mods = [];
-    curr.module.forEach(mod => {
-      if (mod.type === 'localApi') {
-        mods.push(mod);
-      }
-    });
-    return acc.concat(mods);
-  }, []);
-
-  const firstLocalDataSource = localDataSources[0];
-  const dataSource = firstLocalDataSource.createDataSource({});
-
-  const microscopyExtensionLoaded = extensionManager.registeredExtensionIds.includes(
-    '@ohif/extension-dicom-microscopy'
+  const dataSourceModules = useMemo(
+    () => extensionManager.getModulesByType(MODULE_TYPES.DATA_SOURCE) || [],
+    []
   );
 
-  const onDrop = async acceptedFiles => {
-    const studies = await filesToStudies(acceptedFiles, dataSource);
+  const localDataSources = useMemo(
+    () =>
+      dataSourceModules.reduce((acc, curr) => {
+        const mods = [];
+        curr.module.forEach(mod => {
+          if (mod.type === 'localApi') {
+            mods.push(mod);
+          }
+        });
+        return acc.concat(mods);
+      }, []),
+    [dataSourceModules]
+  );
 
-    const query = new URLSearchParams();
+  const dataSource = useMemo(
+    () => localDataSources[0]?.createDataSource({}),
+    [localDataSources]
+  );
 
-    if (microscopyExtensionLoaded) {
-      // TODO: for microscopy, we are forcing microscopy mode, which is not ideal.
-      //     we should make the local drag and drop navigate to the worklist and
-      //     there user can select microscopy mode
-      const smStudies = studies.filter(id => {
-        const study = DicomMetadataStore.getStudy(id);
-        return (
-          study.series.findIndex(s => s.Modality === 'SM' || s.instances[0].Modality === 'SM') >= 0
-        );
-      });
+  const microscopyExtensionLoaded = useMemo(
+    () =>
+      extensionManager
+        .getRegisteredExtensionIds()
+        .includes('@ohif/extension-dicom-microscopy'),
+    []
+  );
 
-      if (smStudies.length > 0) {
-        smStudies.forEach(id => query.append('StudyInstanceUIDs', id));
-
-        modePath = 'microscopy';
+  const onDrop = useCallback(
+    async acceptedFiles => {
+      if (!dataSource) {
+        console.warn('No local data source available to load studies.');
+        return;
       }
-    }
 
-    // Todo: navigate to work list and let user select a mode
-    studies.forEach(id => query.append('StudyInstanceUIDs', id));
-    query.append('datasources', 'dicomlocal');
+      const studies = await filesToStudies(acceptedFiles, dataSource);
 
-    navigate(`/${modePath}?${decodeURIComponent(query.toString())}`);
-  };
+      const query = new URLSearchParams();
+      let targetModePath = modePath;
+
+      if (microscopyExtensionLoaded) {
+        // TODO: for microscopy, we are forcing microscopy mode, which is not ideal.
+        //     we should make the local drag and drop navigate to the worklist and
+        //     there user can select microscopy mode
+        const smStudies = studies.filter(id => {
+          const study = DicomMetadataStore.getStudy(id);
+          return (
+            study.series.findIndex(s => s.Modality === 'SM' || s.instances[0].Modality === 'SM') >=
+            0
+          );
+        });
+
+        if (smStudies.length > 0) {
+          smStudies.forEach(id => query.append('StudyInstanceUIDs', id));
+
+          targetModePath = 'microscopy';
+        }
+      }
+
+      // Todo: navigate to work list and let user select a mode
+      studies.forEach(id => query.append('StudyInstanceUIDs', id));
+      query.append('datasources', 'dicomlocal');
+
+      navigate(`/${targetModePath}?${decodeURIComponent(query.toString())}`);
+    },
+    [dataSource, microscopyExtensionLoaded, modePath, navigate]
+  );
 
   // Set body style
   useEffect(() => {
@@ -387,7 +414,11 @@ function Local({ modePath }: LocalProps) {
               <div className="space-y-2 pt-4 text-center">
                 {dropInitiated ? (
                   <div className="flex flex-col items-center justify-center pt-48">
-                    <LoadingIndicatorProgress className={'h-full w-full bg-black'} />
+                    <LoadingIndicatorProgress
+                      className={'h-full w-full bg-black'}
+                      textBlock={null}
+                      progress={undefined}
+                    />
                   </div>
                 ) : (
                   <div className="space-y-2">
