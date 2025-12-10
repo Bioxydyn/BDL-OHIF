@@ -7,8 +7,184 @@ import Dropzone from 'react-dropzone';
 import filesToStudies from './filesToStudies';
 
 import { extensionManager } from '../../App.tsx';
+import useSearchParams from '../../hooks/useSearchParams.ts';
 
 import { Icon, Button, LoadingIndicatorProgress } from '@ohif/ui';
+import { Unzip, unzipSync } from 'fflate';
+
+const hudId = 'ohif-local-download-hud';
+
+const formatBytes = (value: number) => {
+  if (!Number.isFinite(value)) {
+    return 'N/A';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const idx = Math.min(units.length - 1, Math.floor(Math.log10(Math.max(value, 1)) / 3));
+  return `${(value / 1024 ** idx).toFixed(idx ? 1 : 0)} ${units[idx]}`;
+};
+
+const formatEta = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return 'N/A';
+  }
+
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins ? `${mins}m ` : ''}${secs}s`;
+};
+
+const ensureHud = () => {
+  let el = document.getElementById(hudId);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = hudId;
+    el.style.cssText = [
+      'position:fixed',
+      'left:12px',
+      'top:12px',
+      'z-index:9999',
+      'padding:10px 12px',
+      'border-radius:10px',
+      'min-width:220px',
+      'background:rgba(15,15,18,0.9)',
+      'color:#fff',
+      'font:12px/1.35 ui-monospace, Menlo, Monaco, Consolas, monospace',
+      'box-shadow:0 6px 16px rgba(0,0,0,0.35)',
+      'border:1px solid rgba(255,255,255,0.12)',
+      'backdrop-filter:saturate(1.2) blur(2px)',
+      '-webkit-font-smoothing:antialiased',
+      'pointer-events:none',
+      'user-select:none',
+      'white-space:pre',
+    ].join(';');
+    document.body.appendChild(el);
+  }
+
+  const destroy = () => el?.remove();
+  const update = (lines: string[]) => {
+    if (el) {
+      el.innerHTML = lines.join('\n');
+    }
+  };
+
+  return { update, destroy };
+};
+
+const sanitizeEntryName = (name: string) =>
+  name.replace(/^[/\\]+/, '').replace(/[\\/]+/g, '__') || 'study';
+
+async function downloadAndExtractZip(
+  url: string,
+  handlers: {
+    onFile: (file: File) => void;
+    onProgress?: (received: number, total: number) => void;
+    signal?: AbortSignal;
+  }
+) {
+  const { onFile, onProgress, signal } = handlers;
+  const isAwsSigned = /[?&]X-Amz-/.test(url);
+  const response = await fetch(url, {
+    method: 'GET',
+    mode: 'cors',
+    credentials: isAwsSigned ? 'omit' : 'include',
+    redirect: 'follow',
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+  }
+
+  const total = Number(response.headers.get('Content-Length')) || 0;
+
+  // Fallback for environments without readable streams.
+  if (!response.body?.getReader) {
+    const buffer = new Uint8Array(await response.arrayBuffer());
+    onProgress?.(buffer.byteLength, total || buffer.byteLength);
+    const entries = unzipSync(buffer);
+    Object.entries(entries).forEach(([entryName, data]) => {
+      if (entryName.endsWith('/') || entryName.startsWith('__MACOSX/')) {
+        return;
+      }
+      const file = new File([data], sanitizeEntryName(entryName), {
+        type: 'application/dicom',
+        lastModified: Date.now(),
+      });
+      onFile(file);
+    });
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const pending: Promise<void>[] = [];
+  let unzipError: Error | undefined;
+  let received = 0;
+
+  const unzipper = new Unzip((err, file) => {
+    if (err) {
+      unzipError = err;
+      return;
+    }
+
+    if (!file || file.name.endsWith('/') || file.name.startsWith('__MACOSX/')) {
+      file?.start?.();
+      return;
+    }
+
+    const entryPromise = new Promise<void>((resolve, reject) => {
+      const chunks: Uint8Array[] = [];
+      file.ondata = (dataErr, data, final) => {
+        if (dataErr) {
+          reject(dataErr);
+          return;
+        }
+
+        if (data) {
+          chunks.push(data);
+        }
+
+        if (final) {
+          try {
+            const fileBlob = new Blob(chunks, { type: 'application/dicom' });
+            const zippedFile = new File([fileBlob], sanitizeEntryName(file.name), {
+              type: 'application/dicom',
+              lastModified: Date.now(),
+            });
+            onFile(zippedFile);
+            resolve();
+          } catch (creationErr) {
+            reject(creationErr);
+          }
+        }
+      };
+    });
+
+    pending.push(entryPromise);
+    file.start();
+  });
+
+  // Stream bytes into the unzipper.
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { value, done } = await reader.read();
+    if (value?.byteLength) {
+      received += value.byteLength;
+      onProgress?.(received, total);
+      unzipper.push(value, false);
+    }
+    if (done) {
+      unzipper.push(new Uint8Array(0), true);
+      break;
+    }
+  }
+
+  await Promise.all(pending);
+
+  if (unzipError) {
+    throw unzipError;
+  }
+}
 
 const getLoadButton = (onDrop, text, isDir) => {
   return (
@@ -51,6 +227,9 @@ function Local({ modePath }: LocalProps) {
   const navigate = useNavigate();
   const dropzoneRef = useRef();
   const [dropInitiated, setDropInitiated] = React.useState(false);
+  const lowerCaseSearchParams = useSearchParams({ lowerCaseKeys: true });
+  const loadDataFrom = lowerCaseSearchParams.get('loaddatafrom');
+  const lastLoadedUrlRef = useRef<string | null>(null);
 
   // Initializing the dicom local dataSource
   const dataSourceModules = extensionManager.modules[MODULE_TYPES.DATA_SOURCE];
@@ -108,6 +287,80 @@ function Local({ modePath }: LocalProps) {
       document.body.classList.remove('bg-black');
     };
   }, []);
+
+  useEffect(() => {
+    if (!loadDataFrom || loadDataFrom === lastLoadedUrlRef.current) {
+      return;
+    }
+
+    lastLoadedUrlRef.current = loadDataFrom;
+    const abortController = new AbortController();
+    const extractedFiles: File[] = [];
+    const hud = ensureHud();
+    const startedAt = performance.now();
+    let latestReceived = 0;
+    let latestTotal = 0;
+
+    const updateHud = () => {
+      const elapsedSec = Math.max((performance.now() - startedAt) / 1000, 0.001);
+      const speed = latestReceived ? latestReceived / elapsedSec : NaN;
+      const eta =
+        latestTotal && Number.isFinite(speed) && speed > 0
+          ? (latestTotal - latestReceived) / speed
+          : NaN;
+      const pct = latestTotal ? (latestReceived / latestTotal) * 100 : NaN;
+
+      hud.update(
+        [
+          'Loading study from URL...',
+          latestTotal
+            ? `${pct.toFixed(1)}%  ${formatBytes(latestReceived)} / ${formatBytes(latestTotal)}`
+            : `${formatBytes(latestReceived)} downloaded`,
+          Number.isFinite(speed)
+            ? `${formatBytes(speed)}/s  ETA ${formatEta(eta)}`
+            : undefined,
+          `Extracted files: ${extractedFiles.length}`,
+        ].filter(Boolean) as string[]
+      );
+    };
+
+    setDropInitiated(true);
+    updateHud();
+
+    downloadAndExtractZip(loadDataFrom, {
+      signal: abortController.signal,
+      onProgress: (received, total) => {
+        latestReceived = received;
+        latestTotal = total || latestTotal;
+        updateHud();
+      },
+      onFile: file => {
+        extractedFiles.push(file);
+        updateHud();
+      },
+    })
+      .then(async () => {
+        if (!abortController.signal.aborted) {
+          await onDrop(extractedFiles);
+        }
+      })
+      .catch(err => {
+        if (abortController.signal.aborted) {
+          return;
+        }
+        console.error('Failed to load data from presigned URL', err);
+        window.alert('Could not load the study from loadDataFrom. Please try again later.');
+        setDropInitiated(false);
+      })
+      .finally(() => {
+        hud.destroy();
+      });
+
+    return () => {
+      abortController.abort();
+      hud.destroy();
+    };
+  }, [loadDataFrom, onDrop]);
 
   return (
     <Dropzone
