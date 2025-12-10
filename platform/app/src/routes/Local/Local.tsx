@@ -248,9 +248,9 @@ function Local({ modePath }: LocalProps) {
       }
 
       const studies = await filesToStudies(acceptedFiles, dataSource);
-
       const query = new URLSearchParams();
       let targetModePath = modePath;
+      let studyUIDsForNavigation = studies;
 
       if (microscopyExtensionLoaded) {
         // TODO: for microscopy, we are forcing microscopy mode, which is not ideal.
@@ -265,19 +265,29 @@ function Local({ modePath }: LocalProps) {
         });
 
         if (smStudies.length > 0) {
-          smStudies.forEach(id => query.append('StudyInstanceUIDs', id));
-
+          studyUIDsForNavigation = smStudies;
           targetModePath = 'microscopy';
         }
       }
 
-      // Todo: navigate to work list and let user select a mode
-      studies.forEach(id => query.append('StudyInstanceUIDs', id));
+      const shouldGoDirectToViewer =
+        studyUIDsForNavigation?.length === 1 && targetModePath !== 'microscopy';
+      if (shouldGoDirectToViewer) {
+        targetModePath = 'viewer/dicomlocal';
+      }
+
+      const studyIdsForQuery =
+        (shouldGoDirectToViewer
+          ? studyUIDsForNavigation?.slice(0, 1)
+          : studyUIDsForNavigation) || [];
+
+      studyIdsForQuery.forEach(id => query.append('StudyInstanceUIDs', id));
+
       query.append('datasources', 'dicomlocal');
 
       navigate(`/${targetModePath}?${decodeURIComponent(query.toString())}`);
     },
-    [dataSource, microscopyExtensionLoaded, modePath, navigate]
+    [dataSource, loadDataFrom, microscopyExtensionLoaded, modePath, navigate]
   );
 
   // Set body style
