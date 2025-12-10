@@ -180,12 +180,15 @@ const inversionTimeItem = {
   customizationType: 'ohif.overlayItem',
   label: 'TI: ',
   title: 'Inversion Time',
-  condition: ({ instance }) => instance?.InversionTime,
-  contentF: ({ instance }) => {
-    if (instance && instance.InversionTime) {
-      return `${parseFloat(instance.InversionTime).toFixed(1)}ms`;
+  condition: ({ instance }) => instance?.InversionTime !== undefined,
+  contentF: ({ instance, formatters: { formatNumberPrecision } }) => {
+    const numericValue = Number(instance?.InversionTime);
+    if (Number.isFinite(numericValue)) {
+      return `${formatNumberPrecision(numericValue, 0)}ms`;
     }
-    return '';
+
+    // Fallback to raw string if not numeric
+    return instance?.InversionTime ? `${instance.InversionTime}ms` : '';
   },
 };
 
