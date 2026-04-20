@@ -65,6 +65,17 @@ function commandsModule({
     return toolGroupService.getToolGroupForViewport(viewport.id);
   }
 
+  function buildSegmentsFromLabels(segmentLabels) {
+    return segmentLabels.reduce((segments, label, index) => {
+      const segmentIndex = index + 1;
+      segments[segmentIndex] = {
+        label,
+        active: segmentIndex === 1,
+      };
+      return segments;
+    }, {});
+  }
+
   const actions = {
     /**
      * Generates the selector props for the context menu, specific to
@@ -891,6 +902,10 @@ function commandsModule({
 
       const label = options.label || `Segmentation ${segs.length + 1}`;
       const segmentationId = options.segmentationId || `${csUtils.uuidv4()}`;
+      const segmentLabels =
+        Array.isArray(options.segmentLabels) && options.segmentLabels.length > 0
+          ? options.segmentLabels
+          : null;
 
       const displaySet = displaySetService.getDisplaySetByUID(displaySetInstanceUID);
 
@@ -899,14 +914,16 @@ function commandsModule({
         {
           label,
           segmentationId,
-          segments: options.createInitialSegment
-            ? {
-                1: {
-                  label: 'Segment 1',
-                  active: true,
-                },
-              }
-            : {},
+          segments: segmentLabels
+            ? buildSegmentsFromLabels(segmentLabels)
+            : options.createInitialSegment
+              ? {
+                  1: {
+                    label: 'Segment 1',
+                    active: true,
+                  },
+                }
+              : {},
         }
       );
 
