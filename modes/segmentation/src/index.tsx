@@ -108,30 +108,6 @@ function modeFactory({ modeConfiguration }) {
         ]);
       }
     },
-    onSetupRouteComplete: async ({ servicesManager, commandsManager }: withAppTypes) => {
-      const requestedSegmentLabels = getRequestedSegmentLabels();
-
-      if (requestedSegmentLabels.length === 0) {
-        return;
-      }
-
-      const { viewportGridService, segmentationService } = servicesManager.services;
-      const viewportId = viewportGridService.getState().activeViewportId;
-
-      if (!viewportId || segmentationService.getSegmentations().length > 0) {
-        return;
-      }
-
-      const segmentationId = await commandsManager.run('createLabelmapForViewport', {
-        viewportId,
-        options: {
-          label: 'VoxelFlow Segmentation',
-          segmentLabels: requestedSegmentLabels,
-        },
-      });
-
-      commandsManager.run('setActiveSegmentation', { segmentationId });
-    },
     onModeExit: ({ servicesManager }: withAppTypes) => {
       const {
         toolGroupService,
