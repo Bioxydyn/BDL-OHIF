@@ -65,17 +65,6 @@ function commandsModule({
     return toolGroupService.getToolGroupForViewport(viewport.id);
   }
 
-  function buildSegmentsFromLabels(segmentLabels) {
-    return segmentLabels.reduce((segments, label, index) => {
-      const segmentIndex = index + 1;
-      segments[segmentIndex] = {
-        label,
-        active: segmentIndex === 1,
-      };
-      return segments;
-    }, {});
-  }
-
   const actions = {
     /**
      * Generates the selector props for the context menu, specific to
@@ -893,6 +882,14 @@ function commandsModule({
       const targetViewportId = viewportId;
 
       const viewport = viewports.get(targetViewportId);
+      if (!viewport) {
+        console.error('[BDL-OHIF] createLabelmapForViewport failed because the viewport was not found.', {
+          viewportId: targetViewportId,
+          availableViewportIds: Array.from(viewports.keys()),
+          options,
+        });
+        throw new Error(`Viewport ${targetViewportId} was not found.`);
+      }
 
       // Todo: add support for multiple display sets
       const displaySetInstanceUID =
@@ -908,29 +905,59 @@ function commandsModule({
           : null;
 
       const displaySet = displaySetService.getDisplaySetByUID(displaySetInstanceUID);
+      if (!displaySet) {
+        console.error('[BDL-OHIF] createLabelmapForViewport failed because the display set was not found.', {
+          viewportId: targetViewportId,
+          displaySetInstanceUID,
+          options,
+        });
+        throw new Error(`Display set ${displaySetInstanceUID} was not found.`);
+      }
+
+      console.info('[BDL-OHIF] createLabelmapForViewport called.', {
+        viewportId: targetViewportId,
+        displaySetInstanceUID,
+        label,
+        segmentationId,
+        segmentLabels,
+      });
 
       const generatedSegmentationId = await segmentationService.createLabelmapForDisplaySet(
         displaySet,
         {
           label,
           segmentationId,
-          segments: segmentLabels
-            ? buildSegmentsFromLabels(segmentLabels)
-            : options.createInitialSegment
-              ? {
-                  1: {
-                    label: 'Segment 1',
-                    active: true,
-                  },
-                }
-              : {},
+          segments: options.createInitialSegment
+            ? {
+                1: {
+                  label: 'Segment 1',
+                  active: true,
+                },
+              }
+            : {},
         }
       );
 
-      await segmentationService.addSegmentationRepresentation(viewportId, {
-        segmentationId,
+      await segmentationService.addSegmentationRepresentation(targetViewportId, {
+        segmentationId: generatedSegmentationId,
         type: Enums.SegmentationRepresentations.Labelmap,
       });
+
+      if (segmentLabels) {
+        segmentLabels.forEach((segmentLabel, index) => {
+          segmentationService.addSegment(generatedSegmentationId, {
+            segmentIndex: index + 1,
+            label: segmentLabel,
+            active: index === 0,
+          });
+        });
+
+        console.info('[BDL-OHIF] Added preset ROI labels to segmentation.', {
+          viewportId: targetViewportId,
+          segmentationId: generatedSegmentationId,
+          segmentLabels,
+        });
+      }
 
       return generatedSegmentationId;
     },

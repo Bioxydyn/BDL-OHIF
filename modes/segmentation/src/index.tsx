@@ -32,20 +32,6 @@ const extensionDependencies = {
   '@ohif/extension-cornerstone-dicom-seg': '^3.0.0',
 };
 
-function getRequestedSegmentLabels() {
-  const params = new URLSearchParams(window.location.search);
-  const raw = params.get('roiNames') || params.get('segmentLabels') || params.get('labels');
-
-  if (!raw) {
-    return [];
-  }
-
-  return raw
-    .split(',')
-    .map(value => value.trim())
-    .filter(Boolean);
-}
-
 function modeFactory({ modeConfiguration }) {
   return {
     /**
@@ -64,9 +50,7 @@ function modeFactory({ modeConfiguration }) {
      * Services and other resources.
      */
     onModeEnter: ({ servicesManager, extensionManager, commandsManager }: withAppTypes) => {
-      const { measurementService, toolbarService, toolGroupService, customizationService } =
-        servicesManager.services;
-      const requestedSegmentLabels = getRequestedSegmentLabels();
+      const { measurementService, toolbarService, toolGroupService } = servicesManager.services;
 
       measurementService.clearMeasurements();
 
@@ -87,26 +71,6 @@ function modeFactory({ modeConfiguration }) {
         'MoreTools',
       ]);
       toolbarService.createButtonSection('segmentationToolbox', ['BrushTools', 'Shapes']);
-
-      if (requestedSegmentLabels.length > 0) {
-        customizationService.addModeCustomizations([
-          {
-            id: 'PanelSegmentation.onSegmentationAdd',
-            onSegmentationAdd: async () => {
-              const { viewportGridService } = servicesManager.services;
-              const viewportId = viewportGridService.getState().activeViewportId;
-
-              await commandsManager.run('createLabelmapForViewport', {
-                viewportId,
-                options: {
-                  label: 'VoxelFlow Segmentation',
-                  segmentLabels: requestedSegmentLabels,
-                },
-              });
-            },
-          },
-        ]);
-      }
     },
     onModeExit: ({ servicesManager }: withAppTypes) => {
       const {

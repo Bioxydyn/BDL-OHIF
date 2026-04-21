@@ -3,12 +3,76 @@ import { SegmentationTable } from '@ohif/ui-next';
 import { useActiveViewportSegmentationRepresentations } from '../hooks/useActiveViewportSegmentationRepresentations';
 import { metaData } from '@cornerstonejs/core';
 
+function getRequestedSegmentLabels(): string[] {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('roiNames') || params.get('segmentLabels') || params.get('labels');
+
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean);
+}
+
 export default function PanelSegmentation({
   servicesManager,
   commandsManager,
   children,
 }: withAppTypes) {
   const { customizationService, viewportGridService, displaySetService } = servicesManager.services;
+
+  const createSegmentationForViewport = async (viewportId?: string) => {
+    const requestedSegmentLabels = getRequestedSegmentLabels();
+
+    if (!viewportId) {
+      const viewportIds = Array.from(viewportGridService.getState().viewports.keys());
+      console.error('[BDL-OHIF] Unable to create segmentation because no active viewport is set.', {
+        viewportIds,
+        requestedSegmentLabels,
+      });
+      throw new Error('No active viewport selected for segmentation creation.');
+    }
+
+    if (requestedSegmentLabels.length === 0) {
+      console.info('[BDL-OHIF] Creating segmentation without preset ROI labels.', {
+        viewportId,
+      });
+      return commandsManager.run('createLabelmapForViewport', { viewportId });
+    }
+
+    console.info('[BDL-OHIF] Creating segmentation with preset ROI labels.', {
+      viewportId,
+      requestedSegmentLabels,
+    });
+
+    try {
+      const segmentationId = await commandsManager.run('createLabelmapForViewport', {
+        viewportId,
+        options: {
+          label: 'VoxelFlow Segmentation',
+          segmentLabels: requestedSegmentLabels,
+        },
+      });
+
+      console.info('[BDL-OHIF] Created segmentation with preset ROI labels.', {
+        viewportId,
+        segmentationId,
+        requestedSegmentLabels,
+      });
+
+      return segmentationId;
+    } catch (error) {
+      console.error('[BDL-OHIF] Failed to create segmentation with preset ROI labels.', {
+        viewportId,
+        requestedSegmentLabels,
+        error,
+      });
+      throw error;
+    }
+  };
 
   const { segmentationsWithRepresentations, disabled } =
     useActiveViewportSegmentationRepresentations({
@@ -18,7 +82,7 @@ export default function PanelSegmentation({
   const handlers = {
     onSegmentationAdd: async () => {
       const viewportId = viewportGridService.getState().activeViewportId;
-      commandsManager.run('createLabelmapForViewport', { viewportId });
+      return createSegmentationForViewport(viewportId);
     },
 
     onSegmentationClick: (segmentationId: string) => {
