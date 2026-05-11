@@ -3,6 +3,7 @@ import React from 'react';
 import { Toolbox } from '@ohif/ui-next';
 import PanelSegmentation from './panels/PanelSegmentation';
 import ActiveViewportWindowLevel from './components/ActiveViewportWindowLevel';
+import ActiveViewportColormap from './components/ActiveViewportColormap';
 import PanelMeasurementTable from './panels/PanelMeasurement';
 
 const getPanelModule = ({ commandsManager, servicesManager, extensionManager }: withAppTypes) => {
@@ -75,6 +76,20 @@ const getPanelModule = ({ commandsManager, servicesManager, extensionManager }: 
       name: 'activeViewportWindowLevel',
       component: () => {
         return <ActiveViewportWindowLevel servicesManager={servicesManager} />;
+      },
+    },
+    {
+      name: 'activeViewportColormap',
+      iconName: 'icon-color-lut',
+      iconLabel: 'Color LUT',
+      label: 'Color LUT',
+      component: () => {
+        return (
+          <ActiveViewportColormap
+            servicesManager={servicesManager}
+            commandsManager={commandsManager}
+          />
+        );
       },
     },
     {

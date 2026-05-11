@@ -1,4 +1,5 @@
 import { hotkeys } from '@ohif/core';
+import { ViewportGridService } from '@ohif/core';
 import { id } from './id';
 import toolbarButtons from './toolbarButtons';
 import segmentationButtons from './segmentationButtons';
@@ -15,6 +16,7 @@ const ohif = {
 const cornerstone = {
   viewport: '@ohif/extension-cornerstone.viewportModule.cornerstone',
   panelTool: '@ohif/extension-cornerstone.panelModule.panelSegmentationWithTools',
+  activeViewportColormap: '@ohif/extension-cornerstone.panelModule.activeViewportColormap',
 };
 
 const segmentation = {
@@ -31,6 +33,58 @@ const extensionDependencies = {
   '@ohif/extension-cornerstone': '^3.0.0',
   '@ohif/extension-cornerstone-dicom-seg': '^3.0.0',
 };
+
+const DEFAULT_KTRANS_COLORMAP = 'hot_iron';
+const KTRANS_SERIES_DESCRIPTION = 'Ktrans (extended-tofts)';
+
+function applyDefaultKtransColormap({ servicesManager, viewportId }: withAppTypes & { viewportId?: string }) {
+  const { viewportGridService, displaySetService, cornerstoneViewportService } = servicesManager.services;
+  const targetViewportId = viewportId || viewportGridService.getActiveViewportId();
+
+  if (!targetViewportId) {
+    return;
+  }
+
+  const displaySetUIDs = viewportGridService.getDisplaySetsUIDsForViewport(targetViewportId);
+  if (!displaySetUIDs?.length) {
+    return;
+  }
+
+  const displaySet = displaySetService.getDisplaySetByUID(displaySetUIDs[0]);
+  if (!displaySet || displaySet.SeriesDescription !== KTRANS_SERIES_DESCRIPTION) {
+    return;
+  }
+
+  const existingLutPresentation = cornerstoneViewportService.getPresentations(targetViewportId)?.lutPresentation;
+  const existingProperties = existingLutPresentation?.properties;
+  const existingColormap =
+    existingProperties instanceof Map
+      ? undefined
+      : existingProperties?.colormap;
+
+  if (existingColormap?.name) {
+    return;
+  }
+
+  const viewportState = viewportGridService.getViewportState(targetViewportId);
+  const viewportType = viewportState?.viewportOptions?.viewportType || 'stack';
+
+  cornerstoneViewportService.setPresentations(targetViewportId, {
+    lutPresentation: {
+      viewportType,
+      properties: {
+        ...(existingProperties instanceof Map ? {} : existingProperties),
+        colormap: { name: DEFAULT_KTRANS_COLORMAP },
+      },
+    },
+  });
+
+  console.info('[BDL-OHIF] Applied default Ktrans colormap.', {
+    viewportId: targetViewportId,
+    seriesDescription: displaySet.SeriesDescription,
+    colormap: DEFAULT_KTRANS_COLORMAP,
+  });
+}
 
 function modeFactory({ modeConfiguration }) {
   return {
@@ -50,7 +104,7 @@ function modeFactory({ modeConfiguration }) {
      * Services and other resources.
      */
     onModeEnter: ({ servicesManager, extensionManager, commandsManager }: withAppTypes) => {
-      const { measurementService, toolbarService, toolGroupService } = servicesManager.services;
+      const { measurementService, toolbarService, toolGroupService, viewportGridService } = servicesManager.services;
 
       measurementService.clearMeasurements();
 
@@ -71,6 +125,29 @@ function modeFactory({ modeConfiguration }) {
         'MoreTools',
       ]);
       toolbarService.createButtonSection('segmentationToolbox', ['BrushTools', 'Shapes']);
+
+      const applyColormapForViewport = ({ viewportId }: { viewportId?: string } = {}) => {
+        applyDefaultKtransColormap({ servicesManager, viewportId });
+      };
+
+      const subscriptions = [
+        viewportGridService.subscribe(
+          ViewportGridService.EVENTS.ACTIVE_VIEWPORT_ID_CHANGED,
+          ({ viewportId }) => applyColormapForViewport({ viewportId })
+        ),
+        viewportGridService.subscribe(
+          ViewportGridService.EVENTS.GRID_STATE_CHANGED,
+          ({ viewports }) => {
+            viewports?.forEach(viewport => applyColormapForViewport({ viewportId: viewport.viewportId }));
+          }
+        ),
+        viewportGridService.subscribe(ViewportGridService.EVENTS.VIEWPORTS_READY, () => {
+          applyColormapForViewport({ viewportId: viewportGridService.getActiveViewportId() });
+        }),
+      ];
+
+      (servicesManager.services as any).__vfKtransColormapSubscriptions = subscriptions;
+      applyColormapForViewport({ viewportId: viewportGridService.getActiveViewportId() });
     },
     onModeExit: ({ servicesManager }: withAppTypes) => {
       const {
@@ -81,6 +158,10 @@ function modeFactory({ modeConfiguration }) {
         uiDialogService,
         uiModalService,
       } = servicesManager.services;
+
+      const subscriptions = (servicesManager.services as any).__vfKtransColormapSubscriptions || [];
+      subscriptions.forEach(subscription => subscription.unsubscribe());
+      delete (servicesManager.services as any).__vfKtransColormapSubscriptions;
 
       uiDialogService.dismissAll();
       uiModalService.hide();
@@ -132,7 +213,7 @@ function modeFactory({ modeConfiguration }) {
             id: ohif.layout,
             props: {
               leftPanels: [ohif.leftPanel],
-              rightPanels: [cornerstone.panelTool],
+              rightPanels: [[cornerstone.panelTool, cornerstone.activeViewportColormap]],
               // leftPanelClosed: true,
               viewports: [
                 {
