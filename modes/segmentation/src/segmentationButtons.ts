@@ -24,7 +24,7 @@ const toolbarButtons: Button[] = [
               min: 0.5,
               max: 99.5,
               step: 0.5,
-              value: 25,
+              value: 3,
               commands: {
                 commandName: 'setBrushSize',
                 commandOptions: { toolNames: ['CircularBrush', 'SphereBrush'] },
@@ -59,7 +59,7 @@ const toolbarButtons: Button[] = [
               min: 0.5,
               max: 99.5,
               step: 0.5,
-              value: 25,
+              value: 3,
               commands: {
                 commandName: 'setBrushSize',
                 commandOptions: { toolNames: ['CircularEraser', 'SphereEraser'] },
@@ -94,7 +94,7 @@ const toolbarButtons: Button[] = [
               min: 0.5,
               max: 99.5,
               step: 0.5,
-              value: 25,
+              value: 3,
               commands: {
                 commandName: 'setBrushSize',
                 commandOptions: {

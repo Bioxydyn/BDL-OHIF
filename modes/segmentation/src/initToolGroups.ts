@@ -25,6 +25,7 @@ function createTools(utilityModule) {
         parentTool: 'Brush',
         configuration: {
           activeStrategy: 'FILL_INSIDE_CIRCLE',
+          brushSize: 3,
         },
       },
       {
@@ -32,6 +33,7 @@ function createTools(utilityModule) {
         parentTool: 'Brush',
         configuration: {
           activeStrategy: 'ERASE_INSIDE_CIRCLE',
+          brushSize: 3,
         },
       },
       {
@@ -39,6 +41,7 @@ function createTools(utilityModule) {
         parentTool: 'Brush',
         configuration: {
           activeStrategy: 'FILL_INSIDE_SPHERE',
+          brushSize: 3,
         },
       },
       {
@@ -46,6 +49,7 @@ function createTools(utilityModule) {
         parentTool: 'Brush',
         configuration: {
           activeStrategy: 'ERASE_INSIDE_SPHERE',
+          brushSize: 3,
         },
       },
       {
@@ -53,6 +57,7 @@ function createTools(utilityModule) {
         parentTool: 'Brush',
         configuration: {
           activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
+          brushSize: 3,
         },
       },
       {
@@ -60,6 +65,7 @@ function createTools(utilityModule) {
         parentTool: 'Brush',
         configuration: {
           activeStrategy: 'THRESHOLD_INSIDE_SPHERE',
+          brushSize: 3,
         },
       },
       {
@@ -67,6 +73,7 @@ function createTools(utilityModule) {
         parentTool: 'Brush',
         configuration: {
           activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
+          brushSize: 3,
           // preview: {
           //   enabled: true,
           // },
