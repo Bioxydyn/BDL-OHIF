@@ -662,6 +662,8 @@ function commandsModule({
       if (immediate) {
         viewport.render();
       }
+
+      cornerstoneViewportService.storePresentation({ viewportId });
     },
     changeActiveViewport: ({ direction = 1 }) => {
       const { activeViewportId, viewports } = viewportGridService.getState();

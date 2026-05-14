@@ -78,6 +78,7 @@ function applyDefaultKtransColormap({ servicesManager, viewportId }: withAppType
       },
     },
   });
+  cornerstoneViewportService.storePresentation({ viewportId: targetViewportId });
 
   console.info('[BDL-OHIF] Applied default Ktrans colormap.', {
     viewportId: targetViewportId,
