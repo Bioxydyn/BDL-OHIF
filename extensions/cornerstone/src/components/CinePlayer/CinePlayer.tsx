@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { CinePlayer, useCine } from '@ohif/ui';
+import { useCine } from '@ohif/ui-next';
 import { Enums, eventTarget, cache } from '@cornerstonejs/core';
 import { useAppConfig } from '@state';
 
@@ -39,7 +39,7 @@ function WrappedCinePlayer({
     const { viewports } = viewportGridService.getState();
     const { displaySetInstanceUIDs } = viewports.get(viewportId);
     let frameRate = 24;
-    let isPlaying = cines[viewportId]?.isPlaying || true; // Auto-play when cine opens
+    let isPlaying = cines[viewportId]?.isPlaying || false;
     displaySetInstanceUIDs.forEach(displaySetInstanceUID => {
       const displaySet = displaySetService.getDisplaySetByUID(displaySetInstanceUID);
 
@@ -53,13 +53,13 @@ function WrappedCinePlayer({
       // check if the displaySet is dynamic and set the dynamic info
       if (displaySet.isDynamicVolume) {
         const { dynamicVolumeInfo } = displaySet;
-        const numTimePoints = dynamicVolumeInfo.timePoints.length;
+        const numDimensionGroups = dynamicVolumeInfo.timePoints.length;
         const label = dynamicVolumeInfo.splittingTag;
-        const timePointIndex = dynamicVolumeInfo.timePointIndex || 0;
+        const dimensionGroupNumber = dynamicVolumeInfo.dimensionGroupNumber || 1;
         setDynamicInfo({
           volumeId: displaySet.displaySetInstanceUID,
-          timePointIndex,
-          numTimePoints,
+          dimensionGroupNumber,
+          numDimensionGroups,
           label,
         });
       } else {
@@ -160,8 +160,7 @@ function RenderCinePlayer({
   dynamicInfo: dynamicInfoProp,
   customizationService,
 }) {
-  const { component: CinePlayerComponent = CinePlayer } =
-    customizationService.get('cinePlayer') ?? {};
+  const CinePlayerComponent = customizationService.getCustomization('cinePlayer');
 
   const [dynamicInfo, setDynamicInfo] = useState(dynamicInfoProp);
 
@@ -177,20 +176,20 @@ function RenderCinePlayer({
       return;
     }
 
-    const handleTimePointIndexChange = evt => {
-      const { volumeId, timePointIndex, numTimePoints, splittingTag } = evt.detail;
-      setDynamicInfo({ volumeId, timePointIndex, numTimePoints, label: splittingTag });
+    const handleDimensionGroupChange = evt => {
+      const { volumeId, dimensionGroupNumber, numDimensionGroups, splittingTag } = evt.detail;
+      setDynamicInfo({ volumeId, dimensionGroupNumber, numDimensionGroups, label: splittingTag });
     };
 
     eventTarget.addEventListener(
-      Enums.Events.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED,
-      handleTimePointIndexChange
+      Enums.Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED,
+      handleDimensionGroupChange
     );
 
     return () => {
       eventTarget.removeEventListener(
-        Enums.Events.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED,
-        handleTimePointIndexChange
+        Enums.Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED,
+        handleDimensionGroupChange
       );
     };
   }, [dynamicInfo]);
@@ -200,25 +199,17 @@ function RenderCinePlayer({
       return;
     }
 
-    const { volumeId, timePointIndex, numTimePoints, splittingTag } = dynamicInfo || {};
+    const { volumeId, dimensionGroupNumber, numDimensionGroups, splittingTag } = dynamicInfo || {};
     const volume = cache.getVolume(volumeId, true);
+    volume.dimensionGroupNumber = dimensionGroupNumber;
 
-    // Check if volume exists before trying to set timePointIndex
-    if (volume) {
-      (volume as any).timePointIndex = timePointIndex;
-    }
-
-    setDynamicInfo({ volumeId, timePointIndex, numTimePoints, label: splittingTag });
-  }, [dynamicInfo]);
+    setDynamicInfo({ volumeId, dimensionGroupNumber, numDimensionGroups, label: splittingTag });
+  }, []);
 
   const updateDynamicInfo = useCallback(props => {
-    const { volumeId, timePointIndex } = props;
+    const { volumeId, dimensionGroupNumber } = props;
     const volume = cache.getVolume(volumeId, true);
-
-    // Check if volume exists before trying to set timePointIndex
-    if (volume) {
-      (volume as any).timePointIndex = timePointIndex;
-    }
+    volume.dimensionGroupNumber = dimensionGroupNumber;
   }, []);
 
   return (

@@ -1,41 +1,14 @@
-import { hotkeys } from '@ohif/core';
 import { ViewportGridService } from '@ohif/core';
 import { id } from './id';
 import toolbarButtons from './toolbarButtons';
-import segmentationButtons from './segmentationButtons';
 import initToolGroups from './initToolGroups';
-
-const ohif = {
-  layout: '@ohif/extension-default.layoutTemplateModule.viewerLayout',
-  sopClassHandler: '@ohif/extension-default.sopClassHandlerModule.stack',
-  hangingProtocol: '@ohif/extension-default.hangingProtocolModule.default',
-  leftPanel: '@ohif/extension-default.panelModule.seriesList',
-  rightPanel: '@ohif/extension-default.panelModule.measure',
-};
-
-const cornerstone = {
-  viewport: '@ohif/extension-cornerstone.viewportModule.cornerstone',
-  panelTool: '@ohif/extension-cornerstone.panelModule.panelSegmentationWithTools',
-  activeViewportColormap: '@ohif/extension-cornerstone.panelModule.activeViewportColormap',
-};
-
-const segmentation = {
-  sopClassHandler: '@ohif/extension-cornerstone-dicom-seg.sopClassHandlerModule.dicom-seg',
-  viewport: '@ohif/extension-cornerstone-dicom-seg.viewportModule.dicom-seg',
-};
-
-/**
- * Just two dependencies to be able to render a viewport with panels in order
- * to make sure that the mode is working.
- */
-const extensionDependencies = {
-  '@ohif/extension-default': '^3.0.0',
-  '@ohif/extension-cornerstone': '^3.0.0',
-  '@ohif/extension-cornerstone-dicom-seg': '^3.0.0',
-};
+import setUpAutoTabSwitchHandler from './utils/setUpAutoTabSwitchHandler';
+import { ohif, cornerstone, extensionDependencies, dicomRT, segmentation } from '@ohif/mode-basic';
+export * from './toolbarButtons';
 
 const DEFAULT_KTRANS_COLORMAP = 'hot_iron';
 const KTRANS_SERIES_DESCRIPTION = 'Ktrans (extended-tofts)';
+const ACTIVE_VIEWPORT_COLORMAP_PANEL = '@ohif/extension-cornerstone.panelModule.activeViewportColormap';
 
 function applyDefaultKtransColormap({ servicesManager, viewportId }: withAppTypes & { viewportId?: string }) {
   const { viewportGridService, displaySetService, cornerstoneViewportService } = servicesManager.services;
@@ -57,10 +30,7 @@ function applyDefaultKtransColormap({ servicesManager, viewportId }: withAppType
 
   const existingLutPresentation = cornerstoneViewportService.getPresentations(targetViewportId)?.lutPresentation;
   const existingProperties = existingLutPresentation?.properties;
-  const existingColormap =
-    existingProperties instanceof Map
-      ? undefined
-      : existingProperties?.colormap;
+  const existingColormap = existingProperties instanceof Map ? undefined : existingProperties?.colormap;
 
   if (existingColormap?.name) {
     return;
@@ -88,34 +58,26 @@ function applyDefaultKtransColormap({ servicesManager, viewportId }: withAppType
 }
 
 function modeFactory({ modeConfiguration }) {
+  const _unsubscriptions = [];
   return {
-    /**
-     * Mode ID, which should be unique among modes used by the viewer. This ID
-     * is used to identify the mode in the viewer's state.
-     */
     id,
     routeName: 'segmentation',
-    /**
-     * Mode name, which is displayed in the viewer's UI in the workList, for the
-     * user to select the mode.
-     */
     displayName: 'Segmentation',
-    /**
-     * Runs when the Mode Route is mounted to the DOM. Usually used to initialize
-     * Services and other resources.
-     */
     onModeEnter: ({ servicesManager, extensionManager, commandsManager }: withAppTypes) => {
-      const { measurementService, toolbarService, toolGroupService, viewportGridService } = servicesManager.services;
+      const {
+        measurementService,
+        toolbarService,
+        toolGroupService,
+        segmentationService,
+        viewportGridService,
+        panelService,
+      } = servicesManager.services;
 
       measurementService.clearMeasurements();
-
-      // Init Default and SR ToolGroups
       initToolGroups(extensionManager, toolGroupService, commandsManager);
+      toolbarService.register(toolbarButtons);
 
-      toolbarService.addButtons(toolbarButtons);
-      toolbarService.addButtons(segmentationButtons);
-
-      toolbarService.createButtonSection('primary', [
+      toolbarService.updateSection(toolbarService.sections.primary, [
         'WindowLevel',
         'Pan',
         'Zoom',
@@ -125,29 +87,109 @@ function modeFactory({ modeConfiguration }) {
         'Crosshairs',
         'MoreTools',
       ]);
-      toolbarService.createButtonSection('segmentationToolbox', ['BrushTools', 'Shapes']);
+
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.topLeft, [
+        'orientationMenu',
+        'dataOverlayMenu',
+      ]);
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.bottomMiddle, [
+        'AdvancedRenderingControls',
+      ]);
+      toolbarService.updateSection('AdvancedRenderingControls', [
+        'windowLevelMenuEmbedded',
+        'voiManualControlMenu',
+        'Colorbar',
+        'opacityMenu',
+        'thresholdMenu',
+      ]);
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.topRight, [
+        'modalityLoadBadge',
+        'trackingStatus',
+        'navigationComponent',
+      ]);
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.bottomLeft, [
+        'windowLevelMenu',
+      ]);
+      toolbarService.updateSection('MoreTools', [
+        'Reset',
+        'rotate-right',
+        'flipHorizontal',
+        'ReferenceLines',
+        'ImageOverlayViewer',
+        'StackScroll',
+        'invert',
+        'Cine',
+        'Magnify',
+        'TagBrowser',
+      ]);
+
+      toolbarService.updateSection(toolbarService.sections.labelMapSegmentationToolbox, [
+        'LabelMapTools',
+      ]);
+      toolbarService.updateSection(toolbarService.sections.contourSegmentationToolbox, [
+        'ContourTools',
+      ]);
+      toolbarService.updateSection('LabelMapTools', [
+        'LabelmapSlicePropagation',
+        'BrushTools',
+        'MarkerLabelmap',
+        'RegionSegmentPlus',
+        'Shapes',
+        'LabelMapEditWithContour',
+      ]);
+      toolbarService.updateSection('ContourTools', [
+        'PlanarFreehandContourSegmentationTool',
+        'SculptorTool',
+        'SplineContourSegmentationTool',
+        'LivewireContourSegmentationTool',
+      ]);
+      toolbarService.updateSection(toolbarService.sections.labelMapSegmentationUtilities, [
+        'LabelMapUtilities',
+      ]);
+      toolbarService.updateSection(toolbarService.sections.contourSegmentationUtilities, [
+        'ContourUtilities',
+      ]);
+      toolbarService.updateSection('LabelMapUtilities', [
+        'InterpolateLabelmap',
+        'SegmentBidirectional',
+      ]);
+      toolbarService.updateSection('ContourUtilities', [
+        'LogicalContourOperations',
+        'SimplifyContours',
+        'SmoothContours',
+      ]);
+      toolbarService.updateSection('BrushTools', ['Brush', 'Eraser', 'Threshold']);
+
+      const { unsubscribeAutoTabSwitchEvents } = setUpAutoTabSwitchHandler({
+        segmentationService,
+        viewportGridService,
+        panelService,
+      });
+      _unsubscriptions.push(...unsubscribeAutoTabSwitchEvents);
 
       const applyColormapForViewport = ({ viewportId }: { viewportId?: string } = {}) => {
         applyDefaultKtransColormap({ servicesManager, viewportId });
       };
 
-      const subscriptions = [
+      _unsubscriptions.push(
         viewportGridService.subscribe(
           ViewportGridService.EVENTS.ACTIVE_VIEWPORT_ID_CHANGED,
           ({ viewportId }) => applyColormapForViewport({ viewportId })
-        ),
+        )
+      );
+      _unsubscriptions.push(
         viewportGridService.subscribe(
           ViewportGridService.EVENTS.GRID_STATE_CHANGED,
           ({ viewports }) => {
             viewports?.forEach(viewport => applyColormapForViewport({ viewportId: viewport.viewportId }));
           }
-        ),
+        )
+      );
+      _unsubscriptions.push(
         viewportGridService.subscribe(ViewportGridService.EVENTS.VIEWPORTS_READY, () => {
           applyColormapForViewport({ viewportId: viewportGridService.getActiveViewportId() });
-        }),
-      ];
-
-      (servicesManager.services as any).__vfKtransColormapSubscriptions = subscriptions;
+        })
+      );
       applyColormapForViewport({ viewportId: viewportGridService.getActiveViewportId() });
     },
     onModeExit: ({ servicesManager }: withAppTypes) => {
@@ -160,30 +202,21 @@ function modeFactory({ modeConfiguration }) {
         uiModalService,
       } = servicesManager.services;
 
-      const subscriptions = (servicesManager.services as any).__vfKtransColormapSubscriptions || [];
-      subscriptions.forEach(subscription => subscription.unsubscribe());
-      delete (servicesManager.services as any).__vfKtransColormapSubscriptions;
+      _unsubscriptions.forEach(unsubscribe => unsubscribe());
+      _unsubscriptions.length = 0;
 
-      uiDialogService.dismissAll();
+      uiDialogService.hideAll();
       uiModalService.hide();
       toolGroupService.destroy();
       syncGroupService.destroy();
       segmentationService.destroy();
       cornerstoneViewportService.destroy();
     },
-    /** */
     validationTags: {
       study: [],
       series: [],
     },
-    /**
-     * A boolean return value that indicates whether the mode is valid for the
-     * modalities of the selected studies. Currently we don't have stack viewport
-     * segmentations and we should exclude them
-     */
     isValidMode: ({ modalities }) => {
-      // Don't show the mode if the selected studies have only one modality
-      // that is not supported by the mode
       const modalitiesArray = modalities.split('\\');
       return {
         valid:
@@ -194,18 +227,6 @@ function modeFactory({ modeConfiguration }) {
           'The mode does not support studies that ONLY include the following modalities: SM, OT, DOC',
       };
     },
-    /**
-     * Mode Routes are used to define the mode's behavior. A list of Mode Route
-     * that includes the mode's path and the layout to be used. The layout will
-     * include the components that are used in the layout. For instance, if the
-     * default layoutTemplate is used (id: '@ohif/extension-default.layoutTemplateModule.viewerLayout')
-     * it will include the leftPanels, rightPanels, and viewports. However, if
-     * you define another layoutTemplate that includes a Footer for instance,
-     * you should provide the Footer component here too. Note: We use Strings
-     * to reference the component's ID as they are registered in the internal
-     * ExtensionManager. The template for the string is:
-     * `${extensionId}.{moduleType}.${componentId}`.
-     */
     routes: [
       {
         path: 'template',
@@ -213,9 +234,14 @@ function modeFactory({ modeConfiguration }) {
           return {
             id: ohif.layout,
             props: {
-              leftPanels: [ohif.leftPanel],
-              rightPanels: [[cornerstone.panelTool, cornerstone.activeViewportColormap]],
-              // leftPanelClosed: true,
+              leftPanels: [ohif.thumbnailList],
+              leftPanelResizable: true,
+              rightPanels: [
+                cornerstone.labelMapSegmentationPanel,
+                cornerstone.contourSegmentationPanel,
+                ACTIVE_VIEWPORT_COLORMAP_PANEL,
+              ],
+              rightPanelResizable: true,
               viewports: [
                 {
                   namespace: cornerstone.viewport,
@@ -225,22 +251,19 @@ function modeFactory({ modeConfiguration }) {
                   namespace: segmentation.viewport,
                   displaySetsToDisplay: [segmentation.sopClassHandler],
                 },
+                {
+                  namespace: dicomRT.viewport,
+                  displaySetsToDisplay: [dicomRT.sopClassHandler],
+                },
               ],
             },
           };
         },
       },
     ],
-    /** List of extensions that are used by the mode */
     extensions: extensionDependencies,
-    /** HangingProtocol used by the mode */
-    // Commented out to just use the most applicable registered hanging protocol
-    // The example is used for a grid layout to specify that as a preferred layout
-    // hangingProtocol: ['@ohif/mnGrid'],
-    /** SopClassHandlers used by the mode */
-    sopClassHandlers: [ohif.sopClassHandler, segmentation.sopClassHandler],
-    /** hotkeys for mode */
-    hotkeys: [...hotkeys.defaults.hotkeyBindings],
+    hangingProtocol: ['@ohif/mnGrid'],
+    sopClassHandlers: [ohif.sopClassHandler, segmentation.sopClassHandler, dicomRT.sopClassHandler],
   };
 }
 

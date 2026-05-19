@@ -1,11 +1,13 @@
 import { id } from './id';
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense, useCallback, useMemo } from 'react';
 import getPanelModule from './getPanelModule';
 import getCommandsModule from './getCommandsModule';
+import getCustomizationModule from './getCustomizationModule';
 import { Types } from '@ohif/core';
 
-import { useViewportGrid } from '@ohif/ui';
+import { useViewportGrid } from '@ohif/ui-next';
 import getDicomMicroscopySRSopClassHandler from './DicomMicroscopySRSopClassHandler';
+import getDicomMicroscopyANNSopClassHandler from './DicomMicroscopyANNSopClassHandler';
 import MicroscopyService from './services/MicroscopyService';
 import { useResizeDetector } from 'react-resize-detector';
 import debounce from 'lodash.debounce';
@@ -42,8 +44,7 @@ const extension: Types.Extensions.Extension = {
    * {name, component} object. Example of a viewport module is the CornerstoneViewport
    * that is provided by the Cornerstone extension in OHIF.
    */
-  getViewportModule({ servicesManager, extensionManager, commandsManager }) {
-
+  getViewportModule({ servicesManager }) {
     /**
      *
      * @param props {*}
@@ -80,16 +81,18 @@ const extension: Types.Extensions.Extension = {
         handleWidth: true,
       });
 
+      const setViewportActive = useCallback(
+        (viewportId: string) => {
+          viewportGridService.setActiveViewportId(viewportId);
+        },
+        [viewportGridService]
+      );
+
       return (
         <MicroscopyViewport
           key={displaySetsKey}
-          servicesManager={servicesManager}
-          extensionManager={extensionManager}
-          commandsManager={commandsManager}
           activeViewportId={activeViewportId}
-          setViewportActive={(viewportId: string) => {
-            viewportGridService.setActiveViewportId(viewportId);
-          }}
+          setViewportActive={setViewportActive}
           viewportData={viewportOptions}
           resizeRef={resizeRef}
           {...props}
@@ -134,8 +137,8 @@ const extension: Types.Extensions.Extension = {
           return {
             disabled: false,
             className: isPrimaryActive
-              ? '!text-black bg-primary-light'
-              : '!text-common-bright hover:!bg-primary-dark hover:!text-primary-light',
+              ? '!text-black bg-highlight'
+              : '!text-foreground/80 hover:!bg-muted hover:!text-highlight',
             // Todo: isActive right now is used for nested buttons where the primary
             // button needs to be fully rounded (vs partial rounded) when active
             // otherwise it does not have any other use
@@ -153,12 +156,17 @@ const extension: Types.Extensions.Extension = {
    * Examples include the default sop class handler provided by the default extension
    */
   getSopClassHandlerModule(params) {
-    return [getDicomMicroscopySRSopClassHandler(params)];
+    return [
+      getDicomMicroscopySRSopClassHandler(params),
+      getDicomMicroscopyANNSopClassHandler(params),
+    ];
   },
 
   getPanelModule,
 
   getCommandsModule,
+
+  getCustomizationModule,
 };
 
 export default extension;
