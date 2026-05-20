@@ -18,6 +18,11 @@ jobs:
         with:
           node-version: '20.19.0'
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
+
       - name: Enable Yarn Workspaces
         run: yarn config set workspaces-experimental true
 
