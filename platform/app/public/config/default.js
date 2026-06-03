@@ -4,6 +4,7 @@ window.config = {
   name: 'config/default.js',
   routerBasename: null,
   // whiteLabeling: {},
+  segmentationVFSaveURL: '/api/segmentation',
   extensions: [],
   modes: [],
   customizationService: {},

@@ -1,6 +1,6 @@
 import React, { ReactElement, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useViewportGrid, PanelSection } from '@ohif/ui';
+import { useViewportGrid, PanelSection } from '@ohif/ui-next';
 import { useActiveViewportDisplaySets } from '@ohif/core';
 import { StackViewport, Types } from '@cornerstonejs/core';
 import { nonWLModalities } from '../WindowLevelActionMenu/WindowLevelActionMenu';
