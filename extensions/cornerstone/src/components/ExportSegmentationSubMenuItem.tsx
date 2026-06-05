@@ -55,7 +55,6 @@ export const ExportSegmentationSubMenuItem: React.FC<ExportSegmentationSubMenuIt
                 e.preventDefault();
                 actions.exportVFSegmentation(segmentationId);
               }}
-              disabled={!allowExport}
             >
               {t('Export to VoxelFlow')}
             </DropdownMenuItem>

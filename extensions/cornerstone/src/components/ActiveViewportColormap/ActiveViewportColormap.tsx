@@ -10,7 +10,7 @@ const ActiveViewportColormap = ({ servicesManager, commandsManager }: withAppTyp
   const { activeViewportId } = viewportGrid;
   const displaySets = useActiveViewportDisplaySets({ servicesManager });
   const { customizationService, cornerstoneViewportService } = servicesManager.services;
-  const { colormaps = [] } = customizationService.get('cornerstone.colorbar');
+  const { colormaps = [] } = customizationService.getCustomization('cornerstone.colorbar') ?? {};
 
   const eligibleDisplaySets = useMemo(
     () => displaySets.filter(displaySet => !nonWLModalities.includes(displaySet.Modality)),

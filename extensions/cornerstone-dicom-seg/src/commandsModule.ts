@@ -36,7 +36,7 @@ const commandsModule = ({
   extensionManager,
   commandsManager,
 }: Types.Extensions.ExtensionParams): Types.Extensions.CommandsModule => {
-  const { segmentationService, displaySetService, viewportGridService } =
+  const { segmentationService, displaySetService, viewportGridService, uiNotificationService } =
     servicesManager.services as AppTypes.Services;
 
   const actions = {
@@ -215,20 +215,42 @@ const commandsModule = ({
       const formData = new FormData();
       formData.append('file', blob, `${segmentationInOHIF.label || 'segmentation'}.dcm`);
 
+      uiNotificationService.show({
+        title: 'Export to VoxelFlow',
+        message: 'Uploading segmentation…',
+        type: 'info',
+        duration: 3000,
+      });
+
       return fetch(url, {
         method: 'POST',
         body: formData,
-      }).then(async response => {
-        if (!response.ok) {
-          throw new Error('Failed to upload segmentation to VoxelFlow');
-        }
-
-        try {
-          return await response.json();
-        } catch (_error) {
-          return response;
-        }
-      });
+      })
+        .then(async response => {
+          if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}`);
+          }
+          uiNotificationService.show({
+            title: 'Export to VoxelFlow',
+            message: 'Segmentation uploaded successfully.',
+            type: 'success',
+            duration: 5000,
+          });
+          try {
+            return await response.json();
+          } catch (_error) {
+            return response;
+          }
+        })
+        .catch(err => {
+          uiNotificationService.show({
+            title: 'Export to VoxelFlow failed',
+            message: err.message || 'Unknown error',
+            type: 'error',
+            duration: 8000,
+          });
+          throw err;
+        });
     },
     /**
      * Stores a segmentation based on the provided segmentationId into a specified data source.
