@@ -131,9 +131,10 @@ export default function ComponentShowcase() {
       title="Colors and Typography"
       description="Colors and Typography"
     >
-      <div className="text-foreground min-h-screen bg-black">
-        <div className="mx-auto my-4 max-w-5xl pt-6 pb-3">
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+      <div className="text-foreground min-h-screen bg-background">
+        <div className="mx-auto my-4 max-w-5xl pt-4 pb-6">
+          {/* Navigation cards */}
+          <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-3">
             <a
               href="/colors-and-type"
               className="focus:ring-primary block rounded-lg text-inherit no-underline hover:no-underline focus:outline-none focus:ring-2"
@@ -183,9 +184,7 @@ export default function ComponentShowcase() {
               </Card>
             </a>
           </div>
-        </div>
 
-        <div className="mx-auto my-4 max-w-5xl pt-4 pb-6">
           <h1 className="text-foreground ml-6 mb-6 text-5xl">Colors & Typography</h1>
 
           <ShowcaseRow
@@ -249,13 +248,30 @@ export default function ComponentShowcase() {
                   <span className="text-foreground text-lg">foreground</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="bg-muted-foreground border-input h-[30px] w-[30px] rounded border"></div>
+                  <div className="bg-muted-foreground h-[30px] w-[30px] rounded"></div>
                   <span className="text-foreground text-lg">muted-foreground</span>
                 </div>
               </div>
               <div className="text-secondary-foreground flex items-center pt-1.5 text-lg">
                 For primary and important text, use 'foreground'. When secondary text is available,
                 use 'muted-foreground' to create separation and readability.
+              </div>
+            </div>
+
+            <div className="mb-8 grid grid-cols-[28%,1fr] items-start gap-x-8">
+              <div className="space-y-2.5">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-input h-[30px] w-[30px] rounded"></div>
+                  <span className="text-foreground text-lg">input</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-neutral h-[30px] w-[30px] rounded"></div>
+                  <span className="text-foreground text-lg">neutral</span>
+                </div>
+              </div>
+              <div className="text-secondary-foreground flex items-center pt-1.5 text-lg">
+                Used for borders and UI elements. 'neutral' is typically used at 50% opacity for
+                elements such as scrollbars and will work over light and dark backgrounds
               </div>
             </div>
           </ShowcaseRow>
@@ -380,7 +396,7 @@ function ShowcaseRow({ title, description, children, code }: ShowcaseRowProps) {
         </div>
       </div>
       {showCode && (
-        <pre className="border-input mt-4 overflow-x-auto rounded-md border bg-black p-4 text-sm">
+        <pre className="border-input mt-4 overflow-x-auto rounded-md border bg-background p-4 text-sm">
           <code>{code}</code>
         </pre>
       )}
@@ -409,7 +425,7 @@ function ShowcaseRow({ title, description, children, code }: ShowcaseRowProps) {
 //       </div>
 //       <div className="showcase-content mb-4">{children}</div>
 //       {showCode && (
-//         <pre className="mt-4 overflow-x-auto rounded-md bg-black p-4 text-sm">
+//         <pre className="mt-4 overflow-x-auto rounded-md bg-background p-4 text-sm">
 //           <code>{code}</code>
 //         </pre>
 //       )}

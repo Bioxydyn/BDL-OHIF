@@ -2,8 +2,15 @@ import dcmjs from 'dcmjs';
 import moment from 'moment';
 import React, { useState, useMemo, useCallback } from 'react';
 import { classes, Types } from '@ohif/core';
-import { InputFilterText } from '@ohif/ui';
-import { Select, SelectTrigger, SelectContent, SelectItem, Slider } from '@ohif/ui-next';
+import { InputFilter } from '@ohif/ui-next';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  Slider,
+} from '@ohif/ui-next';
 
 import DicomTagTable from './DicomTagTable';
 import './DicomTagBrowser.css';
@@ -18,7 +25,7 @@ export type Row = {
   depth: number;
   parents?: string[];
   children?: string[];
-  areChildrenVisible?: true;
+  areChildrenVisible?: boolean;
 };
 
 let rowCounter = 0;
@@ -91,7 +98,7 @@ const DicomTagBrowser = ({
 
     setShouldShowInstanceList(isImageStack && activeDisplaySet.images.length > 1);
     const tags = getSortedTags(metadata);
-    const rows = getFormattedRowsFromTags({ tags, metadata, depth: 0 });
+    const rows = getFormattedRowsFromTags({ tags, metadata });
     return rows;
   }, [getMetadata, activeDisplaySet]);
 
@@ -126,16 +133,20 @@ const DicomTagBrowser = ({
   return (
     <div className="dicom-tag-browser-content bg-muted">
       <div className="mb-6 flex flex-row items-start pl-1">
-        <div className="flex w-full flex-row items-start gap-4">
+        <div className="flex w-full flex-row items-start gap-6">
           <div className="flex w-1/3 flex-col">
-            <span className="text-muted-foreground flex h-6 items-center text-xs">Series</span>
+            <span className="text-muted-foreground flex h-6 items-center pb-2 text-base">
+              Series
+            </span>
             <Select
               value={selectedDisplaySetInstanceUID}
               onValueChange={value => onSelectChange({ value })}
             >
-              <SelectTrigger>
-                {displaySetList.find(ds => ds.value === selectedDisplaySetInstanceUID)?.label ||
-                  'Select Series'}
+              <SelectTrigger data-cy="dicom-tag-series-select-trigger">
+                <SelectValue data-cy="dicom-tag-series-select-value">
+                  {displaySetList.find(ds => ds.value === selectedDisplaySetInstanceUID)?.label ||
+                    'Select Series'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {displaySetList.map(item => {
@@ -153,8 +164,8 @@ const DicomTagBrowser = ({
             </Select>
           </div>
           {shouldShowInstanceList && (
-            <div className="mx-auto flex w-1/5 flex-col">
-              <span className="text-muted-foreground flex h-6 items-center text-xs">
+            <div className="mx-auto mt-0.5 flex w-1/4 flex-col">
+              <span className="text-muted-foreground flex h-6 items-center pb-2 text-base">
                 Instance Number ({instanceNumber} of {activeDisplaySet?.images?.length})
               </span>
               <Slider
@@ -165,18 +176,25 @@ const DicomTagBrowser = ({
                 min={1}
                 max={activeDisplaySet?.images?.length}
                 step={1}
-                className="pt-4"
+                className="pt-3"
               />
             </div>
           )}
-          <div className="ml-auto flex w-1/3 flex-col">
-            <span className="text-muted-foreground flex h-6 items-center text-xs">
+          <div className="ml-auto mr-1 flex w-1/3 flex-col">
+            <span className="text-muted-foreground flex h-6 items-center pb-2 text-base">
               Search metadata
             </span>
-            <InputFilterText
-              placeholder="Search metadata..."
-              onDebounceChange={setFilterValue}
-            />
+            <InputFilter
+              className="text-muted-foreground"
+              onChange={setFilterValue}
+            >
+              <InputFilter.SearchIcon />
+              <InputFilter.Input
+                placeholder="Search metadata"
+                className="pl-9 pr-9"
+              />
+              <InputFilter.ClearButton className="text-primary mr-0.5 p-0.5" />
+            </InputFilter>
           </div>
         </div>
       </div>
@@ -185,57 +203,106 @@ const DicomTagBrowser = ({
   );
 };
 
-function getFormattedRowsFromTags({ tags, metadata, depth, parents }) {
+function getFormattedRowsFromTags({ tags, metadata }) {
   const rows: Row[] = [];
+  const stack = [{ tags, depth: 0, parents: null, index: 0, children: [] }];
+  const parentChildMap = new Map();
 
-  tags.forEach(tagInfo => {
-    const uid = generateRowId();
-    if (tagInfo.vr === 'SQ') {
-      const children = tagInfo.values.flatMap(value =>
-        getFormattedRowsFromTags({
-          tags: value,
-          metadata,
-          depth: depth + 1,
-          parents: parents ? [...parents, uid] : [uid],
-        })
-      );
-      const row: Row = {
-        uid,
-        tag: tagInfo.tag,
-        valueRepresentation: tagInfo.vr,
-        keyword: tagInfo.keyword,
-        value: '',
-        depth,
-        isVisible: true,
-        areChildrenVisible: true,
-        children: children.map(child => child.uid),
-        parents,
-      };
-      rows.push(row, ...children);
-    } else {
-      if (tagInfo.vr === 'xs') {
-        try {
-          const tag = dcmjs.data.Tag.fromPString(tagInfo.tag).toCleanString();
-          const originalTagInfo = metadata[tag];
-          tagInfo.vr = originalTagInfo.vr;
-        } catch (error) {
-          console.warn(`Failed to parse value representation for tag '${tagInfo.keyword}'`);
+  while (stack.length > 0) {
+    const current = stack.pop();
+    const { tags, depth, parents, index, children } = current;
+
+    for (let i = index; i < tags.length; i++) {
+      const tagInfo = tags[i];
+      const uid = tagInfo.uid ?? generateRowId();
+
+      if (parents?.length > 0) {
+        parents.forEach(parent => {
+          parentChildMap.get(parent).push(uid);
+        });
+      }
+
+      if (tagInfo.vr === 'SQ') {
+        const row: Row = {
+          uid,
+          tag: tagInfo.tag,
+          valueRepresentation: tagInfo.vr,
+          keyword: tagInfo.keyword,
+          value: '',
+          depth,
+          isVisible: true,
+          areChildrenVisible: true,
+          children: [],
+          parents,
+        };
+        rows.push(row);
+        parentChildMap.set(uid, row.children);
+
+        const newParents = parents ? [...parents, uid] : [uid];
+
+        if (tagInfo.values.length > 0) {
+          stack.push({ tags, depth, parents, index: i + 1, children });
+          for (
+            let j = tagInfo.values.length - 1, values = tagInfo.values[j];
+            j >= 0;
+            values = tagInfo.values[--j]
+          ) {
+            const itemUid = generateRowId();
+            stack.push({
+              tags: values,
+              depth: depth + 2,
+              parents: [...newParents, itemUid],
+              index: 0,
+              children: [],
+            });
+            const itemTagInfo = {
+              tags: [
+                {
+                  tag: '(FFFE,E000)',
+                  vr: '',
+                  keyword: `Item #${j}`,
+                  value: '',
+                  uid: itemUid,
+                },
+              ],
+              depth: depth + 1,
+              parents: newParents,
+              index: 0,
+              children: [],
+            };
+            stack.push(itemTagInfo);
+            parentChildMap.set(itemUid, itemTagInfo.children);
+          }
+          break;
+        }
+      } else {
+        if (tagInfo.vr === 'xs') {
+          try {
+            const tag = dcmjs.data.Tag.fromPString(tagInfo.tag).toCleanString();
+            const originalTagInfo = metadata[tag];
+            tagInfo.vr = originalTagInfo.vr;
+          } catch (error) {
+            console.warn(`Failed to parse value representation for tag '${tagInfo.keyword}'`);
+          }
+        }
+        const row: Row = {
+          uid,
+          tag: tagInfo.tag,
+          valueRepresentation: tagInfo.vr,
+          keyword: tagInfo.keyword,
+          value: tagInfo.value,
+          depth,
+          isVisible: true,
+          parents,
+        };
+        rows.push(row);
+        if (row.tag === '(FFFE,E000)') {
+          row.areChildrenVisible = true;
+          row.children = [];
         }
       }
-      const row: Row = {
-        uid,
-        tag: tagInfo.tag,
-        valueRepresentation: tagInfo.vr,
-        keyword: tagInfo.keyword,
-        value: tagInfo.value,
-        depth,
-        isVisible: true,
-        parents,
-      };
-      rows.push(row);
     }
-  });
-
+  }
   return rows;
 }
 
@@ -250,6 +317,10 @@ function getSortedTags(metadata) {
 
 function getRows(metadata, depth = 0) {
   // Tag, Type, Value, Keyword
+
+  if (!metadata) {
+    return [];
+  }
 
   const keywords = Object.keys(metadata);
 

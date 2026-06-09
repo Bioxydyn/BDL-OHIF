@@ -1,72 +1,70 @@
 import React from 'react';
-
-import { Toolbox } from '@ohif/ui-next';
+import { useTranslation } from 'react-i18next';
+import { Toolbox } from '@ohif/extension-default';
 import PanelSegmentation from './panels/PanelSegmentation';
 import ActiveViewportWindowLevel from './components/ActiveViewportWindowLevel';
+import ActiveViewportColormap from './components/ActiveViewportColormap';
 import PanelMeasurement from './panels/PanelMeasurement';
+import { SegmentationRepresentations } from '@cornerstonejs/tools/enums';
+import i18n from '@ohif/i18n';
 
 const getPanelModule = ({ commandsManager, servicesManager, extensionManager }: withAppTypes) => {
-  const wrappedPanelSegmentation = ({ configuration }) => {
+  const { toolbarService } = servicesManager.services;
+
+  const toolSectionMap = {
+    [SegmentationRepresentations.Labelmap]: toolbarService.sections.labelMapSegmentationToolbox,
+    [SegmentationRepresentations.Contour]: toolbarService.sections.contourSegmentationToolbox,
+  };
+
+  const wrappedPanelSegmentation = props => {
     return (
       <PanelSegmentation
         commandsManager={commandsManager}
         servicesManager={servicesManager}
         extensionManager={extensionManager}
         configuration={{
-          ...configuration,
+          ...props?.configuration,
         }}
+        segmentationRepresentationTypes={props?.segmentationRepresentationTypes}
       />
     );
   };
 
-  const wrappedPanelSegmentationNoHeader = ({ configuration }) => {
+  const wrappedPanelSegmentationNoHeader = props => {
     return (
       <PanelSegmentation
         commandsManager={commandsManager}
         servicesManager={servicesManager}
         extensionManager={extensionManager}
         configuration={{
-          ...configuration,
+          ...props?.configuration,
         }}
+        segmentationRepresentationTypes={props?.segmentationRepresentationTypes}
       />
     );
   };
 
-  const wrappedPanelSegmentationWithTools = ({ configuration }) => {
+  const wrappedPanelSegmentationWithTools = props => {
+    const { t } = useTranslation('SegmentationPanel');
+    const tKey = `${props.segmentationRepresentationTypes?.[0] ?? 'Segmentation'} tools`;
+    const tValue = t(tKey);
+
     return (
       <>
         <Toolbox
-          commandsManager={commandsManager}
-          servicesManager={servicesManager}
-          extensionManager={extensionManager}
-          buttonSectionId="segmentationToolbox"
-          title="Segmentation Tools"
-          configuration={{
-            ...configuration,
-          }}
+          buttonSectionId={toolSectionMap[props.segmentationRepresentationTypes?.[0]]}
+          title={tValue}
         />
         <PanelSegmentation
           commandsManager={commandsManager}
           servicesManager={servicesManager}
           extensionManager={extensionManager}
           configuration={{
-            ...configuration,
+            ...props?.configuration,
           }}
+          segmentationRepresentationTypes={props?.segmentationRepresentationTypes}
         />
       </>
-    );
-  };
-
-  const wrappedPanelMeasurement = ({ configuration }) => {
-    return (
-      <PanelMeasurement
-        commandsManager={commandsManager}
-        servicesManager={servicesManager}
-        extensionManager={extensionManager}
-        configuration={{
-          ...configuration,
-        }}
-      />
     );
   };
 
@@ -78,11 +76,25 @@ const getPanelModule = ({ commandsManager, servicesManager, extensionManager }: 
       },
     },
     {
+      name: 'activeViewportColormap',
+      iconName: 'icon-color-lut',
+      iconLabel: 'Color LUT',
+      label: 'Color LUT',
+      component: () => {
+        return (
+          <ActiveViewportColormap
+            servicesManager={servicesManager}
+            commandsManager={commandsManager}
+          />
+        );
+      },
+    },
+    {
       name: 'panelMeasurement',
       iconName: 'tab-linear',
       iconLabel: 'Measure',
       label: 'Measurement',
-      component: wrappedPanelMeasurement,
+      component: PanelMeasurement,
     },
     {
       name: 'panelSegmentation',
@@ -99,11 +111,29 @@ const getPanelModule = ({ commandsManager, servicesManager, extensionManager }: 
       component: wrappedPanelSegmentationNoHeader,
     },
     {
-      name: 'panelSegmentationWithTools',
+      name: 'panelSegmentationWithToolsLabelMap',
       iconName: 'tab-segmentation',
       iconLabel: 'Segmentation',
-      label: 'Segmentation',
-      component: wrappedPanelSegmentationWithTools,
+      label: i18n.t('SegmentationPanel:Labelmap'),
+      component: props =>
+        wrappedPanelSegmentationWithTools({
+          ...props,
+          segmentationRepresentationTypes: [
+            SegmentationRepresentations.Labelmap,
+            SegmentationRepresentations.Surface,
+          ],
+        }),
+    },
+    {
+      name: 'panelSegmentationWithToolsContour',
+      iconName: 'tab-contours',
+      iconLabel: 'Segmentation',
+      label: i18n.t('SegmentationPanel:Contour'),
+      component: props =>
+        wrappedPanelSegmentationWithTools({
+          ...props,
+          segmentationRepresentationTypes: [SegmentationRepresentations.Contour],
+        }),
     },
   ];
 };

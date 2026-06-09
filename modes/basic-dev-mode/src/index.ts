@@ -70,11 +70,11 @@ function modeFactory({ modeConfiguration }) {
           },
           {
             toolName: toolNames.Zoom,
-            bindings: [{ mouseButton: Enums.MouseBindings.Secondary }],
+            bindings: [{ mouseButton: Enums.MouseBindings.Secondary }, { numTouchPoints: 2 }],
           },
           {
             toolName: toolNames.StackScroll,
-            bindings: [{ mouseButton: Enums.MouseBindings.Wheel }],
+            bindings: [{ mouseButton: Enums.MouseBindings.Wheel }, { numTouchPoints: 3 }],
           },
         ],
         passive: [
@@ -94,8 +94,8 @@ function modeFactory({ modeConfiguration }) {
 
       toolGroupService.createToolGroupAndAddTools('default', tools);
 
-      toolbarService.addButtons(toolbarButtons);
-      toolbarService.createButtonSection('primary', [
+      toolbarService.register(toolbarButtons);
+      toolbarService.updateSection('primary', [
         'MeasurementTools',
         'Zoom',
         'WindowLevel',
@@ -105,14 +105,8 @@ function modeFactory({ modeConfiguration }) {
       ]);
     },
     onModeExit: ({ servicesManager }: withAppTypes) => {
-      const {
-        toolGroupService,
-        measurementService,
-        toolbarService,
-        uiDialogService,
-        uiModalService,
-      } = servicesManager.services;
-      uiDialogService.dismissAll();
+      const { toolGroupService, uiDialogService, uiModalService } = servicesManager.services;
+      uiDialogService.hideAll();
       uiModalService.hide();
       toolGroupService.destroy();
     },
@@ -171,7 +165,6 @@ function modeFactory({ modeConfiguration }) {
       dicompdf.sopClassHandler,
       dicomsr.sopClassHandler,
     ],
-    hotkeys: [...hotkeys.defaults.hotkeyBindings],
   };
 }
 

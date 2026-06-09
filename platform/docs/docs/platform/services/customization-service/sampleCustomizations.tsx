@@ -15,14 +15,32 @@ import progressLoading from '../../../assets/img/Loading-Indicator.png';
 import loadingIndicatorProgress from '../../../assets/img/loading-indicator-icon.png';
 import loadingIndicatorPercent from '../../../assets/img/loading-indicator-percent.png';
 import viewportActionCorners from '../../../assets/img/viewport-action-corners.png';
+import viewportScrollbarVariantProgress from '../../../assets/img/viewport-scrollbar-variant-progress.png';
+import viewportScrollbarVariantLegacy from '../../../assets/img/viewport-scrollbar-variant-legacy.png';
+import viewportScrollbarShowLoadedEndpoints from '../../../assets/img/viewport-scrollbar-showLoadedEndpoints.png';
+import viewportScrollbarShowLoadedFill from '../../../assets/img/viewport-scrollbar-showLoadedFill.png';
+import viewportScrollbarShowViewedFill from '../../../assets/img/viewport-scrollbar-showViewedFill.png';
+import viewportScrollbarShowLoadingPattern from '../../../assets/img/viewport-scrollbar-showLoadingPattern.png';
 import contextMenu from '../../../assets/img/context-menu.jpg';
+import viewportDownloadWarning from '../../../assets/img/viewport-download-warning.png';
+import segmentationOverlay from '../../../assets/img/segmentation-overlay.png';
 
 import segDisplayEditingTrue from '../../../assets/img/segDisplayEditingTrue.png';
 import segDisplayEditingFalse from '../../../assets/img/segDisplayEditingFalse.png';
 import thumbnailMenuItemsImage from '../../../assets/img/thumbnailMenuItemsImage.png';
 import studyMenuItemsImage from '../../../assets/img/studyMenuItemsImage.png';
-import windowLevelActionMenu from '../../../assets/img/windowLevelActionMenu.png';
 import viewPortNotificationImage from '../../../assets/img/viewport-notification.png';
+import captureViewportModal from '../../../assets/img/captureViewportModal.png';
+import aboutModal from '../../../assets/img/aboutModal.png';
+import promptBeginTrackingContent from '../../../assets/img/promptBeginTrackingContent.png';
+import promptAddSeriesContent from '../../../assets/img/promptAddSeriesContent.png';
+import promptSRTrackingContent from '../../../assets/img/promptSRTrackingContent.png';
+import promptsegmentationContent from '../../../assets/img/promptsegmentationContent.png';
+import promptRtstructContent from '../../../assets/img/promptRtstructContent.png';
+import promptDiscardStudyContent from '../../../assets/img/promptDiscardStudyContent.png';
+import promptDiscardSeriesContent from '../../../assets/img/promptDiscardSeriesContent.png';
+import promptDiscardDirtyContent from '../../../assets/img/promptDiscardDirtyContent.png';
+import promptTrackStudyContent from '../../../assets/img/promptTrackStudyContent.png';
 
 export const viewportOverlayCustomizations = [
   {
@@ -147,7 +165,238 @@ window.config = {
   },
 ];
 
+export const viewportScrollbarCustomizations = [
+  {
+    id: 'viewportScrollbar.variant',
+    description: (
+      <>
+        Controls which scrollbar implementation is rendered. Use <code>progress</code> for{' '}
+        ViewportSliceProgressScrollbar and <code>legacy</code> for ViewportImageScrollbar.
+      </>
+    ),
+    default: 'progress',
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportScrollbar.variant': {
+        $set: 'legacy',
+      },
+    },
+  ],
+};
+  `,
+    image: [
+      { img: viewportScrollbarVariantProgress, caption: 'progress (default)' },
+      { img: viewportScrollbarVariantLegacy, caption: 'legacy' },
+    ],
+  },
+  {
+    id: 'viewportScrollbar.showLoadedEndpoints',
+    description:
+      'Shows/hides loaded-range endpoint caps in full progress mode (stack or acquisition-plane volume).',
+    default: true,
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportScrollbar.showLoadedEndpoints': {
+        $set: false,
+      },
+    },
+  ],
+};
+  `,
+    image: { img: viewportScrollbarShowLoadedEndpoints, caption: 'Loaded-range endpoint caps' },
+  },
+  {
+    id: 'viewportScrollbar.showLoadedFill',
+    description: 'Shows/hides the loaded/cached fill track in full progress mode.',
+    default: true,
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportScrollbar.showLoadedFill': {
+        $set: false,
+      },
+    },
+  ],
+};
+  `,
+    image: { img: viewportScrollbarShowLoadedFill, caption: 'Loaded/cached fill track' },
+  },
+  {
+    id: 'viewportScrollbar.showViewedFill',
+    description: 'Shows/hides the viewed fill track in full progress mode.',
+    default: true,
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportScrollbar.showViewedFill': {
+        $set: false,
+      },
+    },
+  ],
+};
+  `,
+    image: { img: viewportScrollbarShowViewedFill, caption: 'Viewed fill track' },
+  },
+  {
+    id: 'viewportScrollbar.showLoadingPattern',
+    description:
+      'Shows/hides the dotted loading pattern for full progress mode. Minimal mode always disables this pattern.',
+    default: true,
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportScrollbar.showLoadingPattern': {
+        $set: false,
+      },
+    },
+  ],
+};
+  `,
+    image: { img: viewportScrollbarShowLoadingPattern, caption: 'Dotted loading pattern' },
+  },
+  {
+    id: 'viewportScrollbar.viewedDwellMs',
+    description:
+      'Minimum time in milliseconds the current slice must stay on screen before it is marked as viewed in full progress mode. 0 marks immediately.',
+    default: 0,
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportScrollbar.viewedDwellMs': {
+        $set: 500,
+      },
+    },
+  ],
+};
+  `,
+  },
+  {
+    id: 'viewportScrollbar.loadedBatchIntervalMs',
+    description:
+      'Coalesces loaded/cached slice state changes into a single UI update at the configured interval in full progress mode. Lower values feel more responsive but trigger more re-renders; higher values reduce render churn but can make progress updates appear delayed. Set to 0 for immediate updates.',
+    default: 200,
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportScrollbar.loadedBatchIntervalMs': {
+        $set: 100,
+      },
+    },
+  ],
+};
+  `,
+  },
+  {
+    id: 'viewportScrollbar.indicator',
+    description: (
+      <>
+        Outer size (<code>totalWidth</code> × <code>totalHeight</code>, border included) and{' '}
+        <code>renderIndicator</code> for the progress scrollbar indicator.{' '}
+        <code>renderIndicator</code> receives <code>React</code> for config file compatibility. All
+        three properties must be provided or the default pill is used. See{' '}
+        <a href="#viewport-scrollbar-indicator-advanced">Advanced</a> for TSX overrides and{' '}
+        <code>useSmartScrollbarLayoutContext</code>.
+      </>
+    ),
+    default: '{}',
+    configurationIntro: (
+      <p style={{ margin: 0 }}>
+        This example sets a <code>10×10</code> SVG indicator (muted outer circle, lighter inner
+        circle) via <code>React.createElement</code>, matching <code>totalWidth</code> and{' '}
+        <code>totalHeight</code>.
+      </p>
+    ),
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportScrollbar.indicator': {
+        totalWidth: 10,
+        totalHeight: 10,
+        renderIndicator: function (React) {
+          return React.createElement(
+            'svg',
+            { width: 10, height: 10, viewBox: '0 0 10 10' },
+            React.createElement('circle', {
+              cx: 5,
+              cy: 5,
+              r: 5,
+              fill: 'hsl(213 22% 59% / 0.9)',
+            }),
+            React.createElement('circle', {
+              cx: 5,
+              cy: 5,
+              r: 4,
+              fill: 'hsl(0 0% 98% / 0.9)',
+            })
+          );
+        },
+      },
+    },
+  ],
+};
+  `,
+  },
+];
+
 export const customizations = [
+  {
+    id: 'ohif.hotkeyBindings',
+    description: 'Defines the hotkeys for the application.',
+    default: 'look at hotkeyBindingsCustomization.ts file',
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      // this will override the default hotkeys and only have one hotkey
+      'ohif.hotkeyBindings': {
+        $set: [
+          {
+            commandName: 'scaleDownViewport',
+            label: 'Zoom Out',
+            keys: ['-'],
+            isEditable: true,
+          },
+        ],
+      },
+    },
+  ],
+
+  // or lets say you want to change one key of the default hotkeys to default
+  // something else
+  customizationService: [
+    {
+      // this will override the default hotkeys and only have one hotkey
+      'ohif.hotkeyBindings': {
+        $filter: {
+          match: { commandName: 'scaleDownViewport' },
+          $set: {
+            keys: ['ctrl+shift+-'],
+          },
+        },
+      },
+    },
+  ],
+    `,
+  },
   {
     id: 'measurementLabels',
     description: 'Labels for measurement tools in the viewer that are automatically asked for.',
@@ -227,24 +476,6 @@ window.config = {
     description: 'Customizes the cine player component.',
     default: 'The CinePlayer component in the UI',
     configuration: null,
-  },
-  {
-    id: 'cornerstone.windowLevelActionMenu',
-    description: 'Window level action menu for the cornerstone viewport.',
-    image: windowLevelActionMenu,
-    default: null,
-    configuration: `
-      window.config = {
-        // rest of window config
-        customizationService: [
-          {
-            'cornerstone.windowLevelActionMenu': {
-                $set: CustomizedComponent,
-            },
-          },
-        ],
-      };
-    `,
   },
   {
     id: 'cornerstone.windowLevelPresets',
@@ -744,6 +975,428 @@ window.config = {
       };
         `,
   },
+  {
+    id: 'viewportDownload.warningMessage',
+    description: 'Customizes the warning message for the viewport download form.',
+    image: viewportDownloadWarning,
+    default: {
+      enabled: true,
+      value: 'Not For Diagnostic Use',
+    },
+    configuration: `
+      window.config = {
+        // rest of window config
+        customizationService: [
+          {
+            'viewportDownload.warningMessage': {
+              $set: {
+                enabled: true,
+                value: 'Careful! This is not for diagnostic use.',
+              },
+            },
+          },
+        ],
+      };
+        `,
+  },
+  {
+    id: 'ohif.captureViewportModal',
+    description: 'The modal for capturing the viewport image.',
+    image: captureViewportModal,
+    default: 'Our own default component',
+    configuration: `
+      window.config = {
+        // rest of window config
+
+        // You can use the component from ImageModal and FooterAction
+        // to build your own custom component
+        customizationService: [
+          {
+            'ohif.captureViewportModal': {
+              $set: CustomizedComponent,
+            },
+          },
+        ],
+      };
+        `,
+  },
+  {
+    id: 'ohif.aboutModal',
+    description: 'The About modal',
+    image: aboutModal,
+    default: 'Our own default component',
+    configuration: `
+      window.config = {
+        // rest of window config
+
+        // You can use the component from AboutModal
+        // to build your own custom component
+        customizationService: [
+          {
+            'ohif.aboutModal': {
+              $set: CustomizedComponent,
+            },
+          },
+        ],
+      };
+        `,
+  },
+  {
+    id: 'viewportDownload.warningMessage',
+    description: 'Customizes the warning message for the viewport download form.',
+    image: viewportDownloadWarning,
+    default: {
+      enabled: true,
+      value: 'Not For Diagnostic Use',
+    },
+    configuration: `
+      window.config = {
+        // rest of window config
+        customizationService: [
+          {
+            'viewportDownload.warningMessage': {
+              $set: {
+                enabled: true,
+                value: 'Careful! This is not for diagnostic use.',
+              },
+            },
+          },
+        ],
+      };
+        `,
+  },
+  {
+    id: 'ohif.captureViewportModal',
+    description: 'The modal for capturing the viewport image.',
+    image: captureViewportModal,
+    default: 'Our own default component',
+    configuration: `
+      window.config = {
+        // rest of window config
+
+        // You can use the component from ImageModal and FooterAction
+        // to build your own custom component
+        customizationService: [
+          {
+            'ohif.captureViewportModal': {
+              $set: CustomizedComponent,
+            },
+          },
+        ],
+      };
+        `,
+  },
+  {
+    id: 'ohif.aboutModal',
+    description: 'The About modal',
+    image: aboutModal,
+    default: 'Our own default component',
+    configuration: `
+      window.config = {
+        // rest of window config
+
+        // You can use the component from AboutModal
+        // to build your own custom component
+        customizationService: [
+          {
+            'ohif.aboutModal': {
+              $set: CustomizedComponent,
+            },
+          },
+        ],
+      };
+        `,
+  },
+  {
+    id: 'viewportNotification.beginTrackingMessage',
+    description: 'Define the content to be displayed in begin tracking prompt',
+    default: 'Track measurements for this series?',
+    image: [promptBeginTrackingContent],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportNotification.beginTrackingMessage': {
+          $set: CustomizedComponent,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'viewportNotification.trackNewSeriesMessage',
+    description: 'Define the content to be displayed in track new series prompt',
+    default: 'Do you want to add this measurement to the existing report?',
+    image: [promptAddSeriesContent],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportNotification.trackNewSeriesMessage': {
+          $set: CustomizedComponent,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'viewportNotification.discardSeriesMessage',
+    description: 'Define the content to be displayed in discard series prompt',
+    default:
+      'You have existing tracked measurements. What would you like to do with your existing tracked measurements?',
+    image: [promptDiscardSeriesContent],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportNotification.discardSeriesMessage': {
+          $set: CustomizedComponent,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'viewportNotification.trackNewStudyMessage',
+    description: 'Define the content to be displayed in track new study prompt',
+    default: 'Track measurements for this series?',
+    image: [promptTrackStudyContent],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportNotification.trackNewStudyMessage': {
+          $set: CustomizedComponent,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'viewportNotification.discardStudyMessage',
+    description: 'Define the content to be displayed in discard study prompt',
+    default:
+      'Measurements cannot span across multiple studies. Do you want to save your tracked measurements?',
+    image: [promptDiscardStudyContent],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportNotification.discardStudyMessage': {
+          $set: CustomizedComponent,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'viewportNotification.hydrateSRMessage',
+    description: 'Define the content to be displayed in hydrate SR prompt',
+    default: 'Do you want to continue tracking measurements for this study?',
+    image: [promptSRTrackingContent],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportNotification.hydrateSRMessage': {
+          $set: CustomizedComponent,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'viewportNotification.hydrateRTMessage',
+    description: 'Define the content to be displayed in hydrate RT prompt',
+    default: 'Do you want to open this Segmentation?',
+    image: [promptRtstructContent],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportNotification.hydrateRTMessage': {
+          $set: CustomizedComponent,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'viewportNotification.hydrateSEGMessage',
+    description: 'Define the content to be displayed in hydrate SEG prompt',
+    default: 'Do you want to open this Segmentation?',
+    image: [promptsegmentationContent],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportNotification.hydrateSEGMessage': {
+          $set: CustomizedComponent,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'viewportNotification.discardDirtyMessage',
+    description: 'Define the content to be displayed in hydrate SR prompt',
+    default: 'There are unsaved measurements. Do you want to save it?',
+    image: [promptDiscardDirtyContent],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'viewportNotification.discardDirtyMessage': {
+          $set: CustomizedComponent,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'measurement.promptBeginTracking',
+    description:
+      'Define the functionality to connect with the measurement tracking machine on begin measurement tracking',
+    default: 'promptBeginTracking',
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'measurement.promptBeginTracking': {
+          $set: customFunction,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'measurement.promptHydrateStructuredReport',
+    description:
+      'Define the functionality to connect with the measurement tracking machine on hydrate SR',
+    default: 'promptHydrateStructuredReport',
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'measurement.promptHydrateStructuredReport': {
+          $set: customFunction,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'measurement.promptTrackNewSeries',
+    description:
+      'Define the functionality to connect with the measurement tracking machine on tracking new series',
+    default: 'promptTrackNewSeries',
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'measurement.promptTrackNewSeries': {
+          $set: customFunction,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'measurement.promptTrackNewStudy',
+    description:
+      'Define the functionality to connect with the measurement tracking machine on tracking new study',
+    default: 'promptTrackNewStudy',
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'measurement.promptTrackNewStudy': {
+          $set: customFunction,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'measurement.promptLabelAnnotation',
+    description:
+      'Define the functionality to connect with the measurement tracking machine on begin measurement tracking',
+    default: 'promptLabelAnnotation',
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'measurement.promptLabelAnnotation': {
+          $set: customFunction,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'measurement.promptSaveReport',
+    description:
+      'Define the functionality to connect with the measurement tracking machine on save SR report',
+    default: 'promptSaveReport',
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'measurement.promptSaveReport': {
+          $set: customFunction,
+      },
+    },
+  ],
+};
+    `,
+  },
+  {
+    id: 'measurement.promptHasDirtyAnnotations',
+    description:
+      'Define the functionality to connect with the measurement tracking machine on there are dirty annotations',
+    default: 'promptHasDirtyAnnotations',
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'measurement.promptHasDirtyAnnotations': {
+          $set: customFunction,
+      },
+    },
+  ],
+};
+    `,
+  },
 ];
 
 export const segmentationCustomizations = [
@@ -851,6 +1504,53 @@ window.config = {
     {
       'panelSegmentation.disableEditing': {
         $set: true, // Disables editing of segmentations in the panel
+      },
+    },
+  ],
+};
+  `,
+  },
+  {
+    id: 'panelSegmentation.disableUpdateSegmentationStats',
+    description: 'Disables the automatic update of segmentation statistics in the panel.',
+    default: false,
+    image: [],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'panelSegmentation.disableUpdateSegmentationStats': {
+        $set: true, // Disables the automatic update of segmentation statistics in the panel
+      },
+    },
+  ],
+};
+  `,
+  },
+  {
+    id: 'panelSegmentation.jumpToSegmentHighlightAnimationConfig',
+    description:
+      'Customize the highlight animation when clicking on a segment at the segmentation panel and jumping to it.',
+    default: {
+      highlightAlpha: 0.9,
+      highlightSegment: true,
+      animationLength: 750,
+      animationFunctionType: 'ease-in-out',
+    },
+    image: [],
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+    {
+      'panelSegmentation.jumpToSegmentHighlightAnimationConfig': {
+        $set: {
+          highlightAlpha: 1.0,
+          highlightSegment: true,
+          animationLength: 900,
+          animationFunctionType: 'linear', // one of 'ease-in-out', 'ease-in', 'ease-out', 'ease', 'linear'
+        },
       },
     },
   ],
@@ -1271,78 +1971,270 @@ window.config = {
 };
   `,
   },
+  {
+    id: 'studyBrowser.thumbnailDoubleClickCallback',
+    description:
+      'Defines the callback function for when the user double clicks a series on the study browser.',
+    default: `{
+    callback: ({
+            activeViewportId,
+            servicesManager,
+            isHangingProtocolLayout
+        }) =>
+        async displaySetInstanceUID => {
+            const {
+                hangingProtocolService,
+                viewportGridService,
+                uiNotificationService
+            } =
+            servicesManager.services;
+            let updatedViewports = [];
+            const viewportId = activeViewportId;
+
+            try {
+                updatedViewports = hangingProtocolService.getViewportsRequireUpdate(
+                    viewportId,
+                    displaySetInstanceUID,
+                    isHangingProtocolLayout
+                );
+            } catch (error) {
+                console.warn(error);
+                uiNotificationService.show({
+                    title: 'Thumbnail Double Click',
+                    message: 'The selected display sets could not be added to the viewport.',
+                    type: 'error',
+                    duration: 3000,
+                });
+            }
+
+            commandsManager.run({
+              commandName: 'setDisplaySetsForViewports',
+              commandOptions: { viewportsToUpdate: updatedViewports },
+            });
+        },
+}`,
+    configuration: `
+window.config = {
+    // rest of window config
+    customizationService: [{
+        'studyBrowser.thumbnailDoubleClickCallback': {
+            callback: ({
+                    activeViewportId,
+                    commandsManager,
+                    servicesManager,
+                    isHangingProtocolLayout
+                }) =>
+                async displaySetInstanceUID => {
+                    const {
+                        hangingProtocolService,
+                        viewportGridService,
+                        uiNotificationService
+                    } =
+                    servicesManager.services;
+
+                    let updatedViewports = [];
+                    const viewportId = activeViewportId;
+
+                    // Changing original function here:
+                    if (isBlacklistedModality(displaySetInstanceUID)) {
+                        return;
+                    }
+
+                    try {
+                        updatedViewports = hangingProtocolService.getViewportsRequireUpdate(
+                            viewportId,
+                            displaySetInstanceUID,
+                            isHangingProtocolLayout
+                        );
+                    } catch (error) {
+                        console.warn(error);
+                        uiNotificationService.show({
+                            title: 'Thumbnail Double Click',
+                            message: 'The selected display sets could not be added to the viewport.',
+                            type: 'error',
+                            duration: 3000,
+                        });
+                    }
+                  commandsManager.run({
+                    commandName: 'setDisplaySetsForViewports',
+                    commandOptions: { viewportsToUpdate: updatedViewports },
+                  });
+                };
+        },
+    }],
+};
+  `,
+  },
+  {
+    id: 'instanceSortingCriteria',
+    description: 'Defines the instance sorting criteria to sort the images',
+    default: `{
+    sortFunctions: {},
+    defaultSortFunctionName: '',
+  }`,
+    configuration: `
+window.config = {
+  // rest of window config
+  customizationService: [
+   {
+      'instanceSortingCriteria': {
+        $set: {
+          sortFunctions: {
+            sort: (a, b) => {}
+          },
+          defaultSortFunctionName: 'sort',
+        },
+      },
+    }
+  ],
+};
+  `,
+  },
 ];
 
+function normalizeCustomizationImageItem(item: unknown): {
+  img: unknown;
+  caption?: React.ReactNode;
+} {
+  if (
+    item !== null &&
+    typeof item === 'object' &&
+    'img' in item &&
+    typeof (item as { img: unknown }).img !== 'undefined'
+  ) {
+    const o = item as { img: unknown; caption?: React.ReactNode };
+    return { img: o.img, caption: o.caption };
+  }
+  return { img: item };
+}
+
 export const TableGenerator = (customizations: any[]) => {
-  return customizations.map(({ id, description, default: defaultValue, configuration, image }) => (
-    <div
-      key={id}
-      style={{ marginBottom: '2rem', borderRadius: '8px', padding: '1rem' }}
-    >
-      <h3
-        id={id.toLowerCase().replace(/\./g, '')}
-        style={{ marginBottom: '1rem', fontSize: '1.5rem' }}
+  return customizations.map(
+    ({ id, description, default: defaultValue, configuration, configurationIntro, image }) => (
+      <div
+        key={id}
+        style={{ marginBottom: '2rem', borderRadius: '8px', padding: '1rem' }}
       >
-        {id}
-      </h3>
-      <table style={{ width: '100%', tableLayout: 'fixed' }}>
-        <tbody>
-          <tr>
-            <th style={{ textAlign: 'left', verticalAlign: 'top', width: '20%' }}>ID</th>
-            <td style={{ wordBreak: 'break-word' }}>
-              <code>{id}</code>
-            </td>
-          </tr>
-          <tr>
-            <th style={{ textAlign: 'left', verticalAlign: 'top', width: '20%' }}>Description</th>
-            <td>
-              <div>{description}</div>
-              {image && (
-                <div>
-                  {Array.isArray(image) ? (
-                    image.map((img, index) => (
-                      <Image
-                        key={index}
-                        img={img}
-                        alt={`${id}-${index + 1}`}
-                        style={{ width: '400px' }}
-                      />
-                    ))
-                  ) : (
-                    <Image
-                      img={image}
-                      alt={id}
-                      style={{ width: '400px' }}
-                    />
-                  )}
-                </div>
-              )}
-            </td>
-          </tr>
-          <tr>
-            <th style={{ textAlign: 'left', verticalAlign: 'top', width: '20%' }}>Default Value</th>
-            <td style={{ wordBreak: 'break-word' }}>
-              <pre>
-                {typeof defaultValue === 'string'
-                  ? defaultValue
-                  : JSON.stringify(defaultValue, null, 2)}
-              </pre>
-            </td>
-          </tr>
-          <tr>
-            <th style={{ textAlign: 'left', verticalAlign: 'top', width: '20%' }}>Example</th>
-            <td style={{ wordBreak: 'break-word' }}>
-              {configuration && (
-                <div>
-                  <pre>
-                    <code>{configuration}</code>
-                  </pre>
-                </div>
-              )}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  ));
+        <h3
+          id={id.toLowerCase().replace(/\./g, '')}
+          style={{ marginBottom: '1rem', fontSize: '1.5rem' }}
+        >
+          {id}
+        </h3>
+        <table style={{ width: '100%', tableLayout: 'fixed' }}>
+          <tbody>
+            <tr>
+              <th style={{ textAlign: 'left', verticalAlign: 'top', width: '20%' }}>ID</th>
+              <td style={{ wordBreak: 'break-word' }}>
+                <code>{id}</code>
+              </td>
+            </tr>
+            <tr>
+              <th style={{ textAlign: 'left', verticalAlign: 'top', width: '20%' }}>Description</th>
+              <td>
+                <div>{description}</div>
+                {image && (
+                  <div>
+                    {Array.isArray(image)
+                      ? image.map((item, index) => {
+                          const { img, caption } = normalizeCustomizationImageItem(item);
+                          const altText =
+                            typeof caption === 'string' && caption.length > 0
+                              ? `${id}: ${caption}`
+                              : `${id} screenshot ${index + 1}`;
+                          return (
+                            <figure
+                              key={index}
+                              style={{ margin: '0 0 1rem 0' }}
+                            >
+                              <Image
+                                img={img}
+                                alt={altText}
+                                style={{ width: '400px' }}
+                              />
+                              {caption != null && caption !== '' && (
+                                <figcaption
+                                  style={{
+                                    fontSize: '0.9rem',
+                                    marginTop: '0.35rem',
+                                    color: 'var(--ifm-color-emphasis-700)',
+                                  }}
+                                >
+                                  {caption}
+                                </figcaption>
+                              )}
+                            </figure>
+                          );
+                        })
+                      : (() => {
+                          const { img, caption } = normalizeCustomizationImageItem(image);
+                          const altText =
+                            typeof caption === 'string' && caption.length > 0
+                              ? `${id}: ${caption}`
+                              : id;
+                          return (
+                            <figure style={{ margin: 0 }}>
+                              <Image
+                                img={img}
+                                alt={altText}
+                                style={{ width: '400px' }}
+                              />
+                              {caption != null && caption !== '' && (
+                                <figcaption
+                                  style={{
+                                    fontSize: '0.9rem',
+                                    marginTop: '0.35rem',
+                                    color: 'var(--ifm-color-emphasis-700)',
+                                  }}
+                                >
+                                  {caption}
+                                </figcaption>
+                              )}
+                            </figure>
+                          );
+                        })()}
+                  </div>
+                )}
+              </td>
+            </tr>
+            <tr>
+              <th style={{ textAlign: 'left', verticalAlign: 'top', width: '20%' }}>
+                Default Value
+              </th>
+              <td style={{ wordBreak: 'break-word' }}>
+                <pre>
+                  {typeof defaultValue === 'string'
+                    ? defaultValue
+                    : JSON.stringify(defaultValue, null, 2)}
+                </pre>
+              </td>
+            </tr>
+            <tr>
+              <th style={{ textAlign: 'left', verticalAlign: 'top', width: '20%' }}>Example</th>
+              <td style={{ wordBreak: 'break-word' }}>
+                {configuration && (
+                  <div>
+                    {configurationIntro && (
+                      <div
+                        style={{
+                          marginBottom: '0.75rem',
+                          fontSize: '0.95rem',
+                          color: 'var(--ifm-color-emphasis-700)',
+                        }}
+                      >
+                        {configurationIntro}
+                      </div>
+                    )}
+                    <pre>
+                      <code>{configuration}</code>
+                    </pre>
+                  </div>
+                )}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    )
+  );
 };

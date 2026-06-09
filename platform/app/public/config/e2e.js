@@ -17,7 +17,7 @@ if (window.location.search === '?today') {
 
 /** @type {AppTypes.Config} */
 window.config = {
-  routerBasename: '/',
+  routerBasename: null,
   extensions: [],
   modes: ['@ohif/mode-test'],
   showStudyList: true,
@@ -138,7 +138,7 @@ window.config = {
         supportsReject: true,
         supportsStow: true,
         imageRendering: 'wadors',
-        thumbnailRendering: 'wadors',
+        thumbnailRendering: 'thumbnail',
         enableStudyLazyLoad: true,
         supportsFuzzyMatching: false,
         supportsWildcard: true,

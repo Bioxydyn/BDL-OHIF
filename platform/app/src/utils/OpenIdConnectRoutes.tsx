@@ -1,10 +1,11 @@
 import React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router';
 import CallbackPage from '../routes/CallbackPage';
 import SignoutCallbackComponent from '../routes/SignoutCallbackComponent';
 import LegacyClient from './legacyOIDCClient';
 import NextClient from './nextOIDCClient';
+import { publicUrl } from '@ohif/app';
 
 function _isAbsoluteUrl(url) {
   return url.includes('http://') || url.includes('https://');
@@ -78,7 +79,7 @@ function LoginComponent(userManager) {
       sessionStorage.setItem('ohif-redirect-to', JSON.stringify(ohifRedirectTo));
     } else {
       const ohifRedirectTo = {
-        pathname: '/',
+        pathname: publicUrl,
       };
       sessionStorage.setItem('ohif-redirect-to', JSON.stringify(ohifRedirectTo));
     }
@@ -94,7 +95,7 @@ function LoginComponent(userManager) {
 }
 
 function OpenIdConnectRoutes({ oidc, routerBasename, userAuthenticationService }) {
-  const userManager = initUserManager(oidc, routerBasename);
+  const userManager = useMemo(() => initUserManager(oidc, routerBasename), [oidc, routerBasename]);
 
   const getAuthorizationHeader = () => {
     const user = userAuthenticationService.getUser();
@@ -145,6 +146,19 @@ function OpenIdConnectRoutes({ oidc, routerBasename, userAuthenticationService }
       getAuthorizationHeader,
       handleUnauthenticated,
     });
+  }, []);
+
+  useEffect(() => {
+    const userLoadedHandler = user => {
+      userAuthenticationService.setUser(user);
+    };
+
+    userManager.events.addUserLoaded(userLoadedHandler);
+
+    // Cleanup on component unmount.
+    return () => {
+      userManager.events.removeUserLoaded(userLoadedHandler);
+    };
   }, []);
 
   const oidcAuthority = oidc[0].authority;

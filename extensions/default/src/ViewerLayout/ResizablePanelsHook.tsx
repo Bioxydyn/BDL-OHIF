@@ -1,6 +1,6 @@
 import { useState, useCallback, useLayoutEffect, useRef } from 'react';
 import { getPanelElement, getPanelGroupElement } from 'react-resizable-panels';
-import { panelGroupDefinition } from './constants/panels';
+import { getPanelGroupDefinition } from './constants/panels';
 
 /**
  * Set the minimum and maximum css style width attributes for the given element.
@@ -16,6 +16,10 @@ import { panelGroupDefinition } from './constants/panels';
  * @param width the max and min width to set on the element
  */
 const setMinMaxWidth = (elem, width?) => {
+  if (!elem) {
+    return;
+  }
+
   elem.style.minWidth = width === undefined ? '' : `${width}px`;
   elem.style.maxWidth = elem.style.minWidth;
 };
@@ -24,8 +28,23 @@ const useResizablePanels = (
   leftPanelClosed,
   setLeftPanelClosed,
   rightPanelClosed,
-  setRightPanelClosed
+  setRightPanelClosed,
+  hasLeftPanels,
+  hasRightPanels,
+  leftPanelInitialExpandedWidth,
+  rightPanelInitialExpandedWidth,
+  leftPanelMinimumExpandedWidth,
+  rightPanelMinimumExpandedWidth
 ) => {
+  const [panelGroupDefinition] = useState(
+    getPanelGroupDefinition({
+      leftPanelInitialExpandedWidth,
+      rightPanelInitialExpandedWidth,
+      leftPanelMinimumExpandedWidth,
+      rightPanelMinimumExpandedWidth,
+    })
+  );
+
   const [leftPanelExpandedWidth, setLeftPanelExpandedWidth] = useState(
     panelGroupDefinition.left.initialExpandedWidth
   );
@@ -152,6 +171,8 @@ const useResizablePanels = (
     rightPanelExpandedWidth,
     leftResizablePanelMinimumSize,
     rightResizablePanelMinimumSize,
+    hasLeftPanels,
+    hasRightPanels,
   ]);
 
   /**

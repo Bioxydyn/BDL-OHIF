@@ -30,6 +30,7 @@ const StudyItem = ({
       collapsible
       onClick={onClick}
       onKeyDown={() => {}}
+      className="flex-shrink-0"
       role="button"
       tabIndex={0}
       defaultValue={isActive ? 'study-item' : undefined}
@@ -41,15 +42,21 @@ const StudyItem = ({
               <div className="flex min-w-0 flex-col items-start text-[13px]">
                 <Tooltip>
                   <TooltipContent>{date}</TooltipContent>
-                  <TooltipTrigger className="w-full">
-                    <div className="h-[18px] w-full max-w-[160px] overflow-hidden truncate whitespace-nowrap text-left text-white">
+                  <TooltipTrigger
+                    className="w-full"
+                    asChild
+                  >
+                    <div className="text-foreground h-[18px] w-full max-w-[160px] overflow-hidden truncate whitespace-nowrap text-left">
                       {date}
                     </div>
                   </TooltipTrigger>
                 </Tooltip>
                 <Tooltip>
                   <TooltipContent>{description}</TooltipContent>
-                  <TooltipTrigger className="w-full">
+                  <TooltipTrigger
+                    className="w-full"
+                    asChild
+                  >
                     <div className="text-muted-foreground h-[18px] w-full overflow-hidden truncate whitespace-nowrap text-left">
                       {description}
                     </div>

@@ -9,9 +9,8 @@ import { useTranslation } from 'react-i18next';
 //
 import filtersMeta from './filtersMeta.js';
 import { useAppConfig } from '@state';
-import { useDebounce, useSearchParams } from '@hooks';
-import { utils, hotkeys } from '@ohif/core';
-import publicUrl from '../../utils/publicUrl';
+import { useDebounce, useSearchParams } from '../../hooks';
+import { utils, Types as coreTypes } from '@ohif/core';
 
 import {
   StudyListExpandedRow,
@@ -19,11 +18,6 @@ import {
   StudyListTable,
   StudyListPagination,
   StudyListFilter,
-  useModal,
-  AboutModal,
-  UserPreferences,
-  useSessionStorage,
-  InvestigationalUseDialog,
   Button,
   ButtonEnums,
 } from '@ohif/ui';
@@ -35,20 +29,20 @@ import {
   TooltipTrigger,
   TooltipContent,
   Clipboard,
+  useModal,
+  useSessionStorage,
   Onboarding,
   ScrollArea,
+  InvestigationalUseDialog,
 } from '@ohif/ui-next';
 
 import { Types } from '@ohif/ui';
 
-import i18n from '@ohif/i18n';
 import { preserveQueryParameters, preserveQueryStrings } from '../../utils/preserveQueryParameters';
 
 const PatientInfoVisibility = Types.PatientInfoVisibility;
 
 const { sortBySeriesDate } = utils;
-
-const { availableLanguages, defaultLanguage, currentLanguage } = i18n;
 
 const seriesInStudiesMap = new Map();
 
@@ -66,7 +60,6 @@ function WorkList({
   onRefresh,
   servicesManager,
 }: withAppTypes) {
-  const { hotkeyDefinitions, hotkeyDefaults } = hotkeysManager;
   const { show, hide } = useModal();
   const { t } = useTranslation();
   // ~ Modes
@@ -102,6 +95,7 @@ function WorkList({
   const sortModifier = sortDirection === 'descending' ? 1 : -1;
   const defaultSortValues =
     shouldUseDefaultSort && canSort ? { sortBy: 'studyDate', sortDirection: 'ascending' } : {};
+  const { customizationService } = servicesManager.services;
 
   const sortedStudies = useMemo(() => {
     if (!canSort) {
@@ -213,7 +207,7 @@ function WorkList({
       skipEmptyString: true,
     });
     navigate({
-      pathname: publicUrl,
+      pathname: '/',
       search: search ? `?${search}` : undefined,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -347,7 +341,7 @@ function WorkList({
             <>
               <Icons.GroupLayers
                 className={classnames('mr-2 inline-flex w-4', {
-                  'text-primary-active': isExpanded,
+                  'text-primary': isExpanded,
                   'text-secondary-light': !isExpanded,
                 })}
               />
@@ -397,12 +391,21 @@ function WorkList({
                 })
               : appConfig.loadedModes
             ).map((mode, i) => {
+              if (mode.hide) {
+                // Hide this mode from display
+                return null;
+              }
               const modalitiesToCheck = modalities.replaceAll('/', '\\');
 
               const { valid: isValidMode, description: invalidModeDescription } = mode.isValidMode({
                 modalities: modalitiesToCheck,
                 study,
               });
+              if (isValidMode === null) {
+                // Hide this as a computed result.
+                return null;
+              }
+
               // TODO: Modes need a default/target route? We mostly support a single one for now.
               // We should also be using the route path, but currently are not
               // mode.routeName
@@ -421,7 +424,7 @@ function WorkList({
                   <Link
                     className={isValidMode ? '' : 'cursor-not-allowed'}
                     key={i}
-                    to={`${publicUrl}${mode.routeName}${dataPath || ''}?${query.toString()}`}
+                    to={`${mode.routeName}${dataPath || ''}?${query.toString()}`}
                     onClick={event => {
                       // In case any event bubbles up for an invalid mode, prevent the navigation.
                       // For example, the event bubbles up when the icon embedded in the disabled button is clicked.
@@ -431,10 +434,10 @@ function WorkList({
                     }}
                     // to={`${mode.routeName}/dicomweb?StudyInstanceUIDs=${studyInstanceUid}`}
                   >
-                    {/* TODO revisit the completely rounded style of buttons used for launching a mode from the worklist later - for now use LegacyButton*/}
+                    {/* TODO revisit the completely rounded style of buttons used for launching a mode from the worklist later */}
                     <Button
                       type={ButtonEnums.type.primary}
-                      size={ButtonEnums.size.medium}
+                      size={ButtonEnums.size.smallTall}
                       disabled={!isValidMode}
                       startIconTooltip={
                         !isValidMode ? (
@@ -452,7 +455,7 @@ function WorkList({
                       }
                       onClick={() => {}}
                       dataCY={`mode-${mode.routeName}-${studyInstanceUid}`}
-                      className={isValidMode ? 'text-[13px]' : 'bg-[#222d44] text-[13px]'}
+                      className={!isValidMode && 'bg-[#222d44]'}
                     >
                       {mode.displayName}
                     </Button>
@@ -470,45 +473,34 @@ function WorkList({
   });
 
   const hasStudies = numOfStudies > 0;
-  const versionNumber = process.env.VERSION_NUMBER;
-  const commitHash = process.env.COMMIT_HASH;
+
+  const AboutModal = customizationService.getCustomization(
+    'ohif.aboutModal'
+  ) as coreTypes.MenuComponentCustomization;
+  const UserPreferencesModal = customizationService.getCustomization(
+    'ohif.userPreferencesModal'
+  ) as coreTypes.MenuComponentCustomization;
 
   const menuOptions = [
     {
-      title: t('Header:About'),
+      title: AboutModal?.menuTitle ?? t('Header:About'),
       icon: 'info',
       onClick: () =>
         show({
           content: AboutModal,
-          title: t('AboutModal:About OHIF Viewer'),
-          contentProps: { versionNumber, commitHash },
-          containerDimensions: 'max-w-4xl max-h-4xl',
+          title: AboutModal?.title ?? t('AboutModal:About OHIF Viewer'),
+          containerClassName: AboutModal?.containerClassName ?? 'max-w-md',
         }),
     },
     {
-      title: t('Header:Preferences'),
+      title: UserPreferencesModal.menuTitle ?? t('Header:Preferences'),
       icon: 'settings',
       onClick: () =>
         show({
-          title: t('UserPreferencesModal:User preferences'),
-          content: UserPreferences,
-          contentProps: {
-            hotkeyDefaults: hotkeysManager.getValidHotkeyDefinitions(hotkeyDefaults),
-            hotkeyDefinitions,
-            onCancel: hide,
-            currentLanguage: currentLanguage(),
-            availableLanguages,
-            defaultLanguage,
-            onSubmit: state => {
-              if (state.language.value !== currentLanguage().value) {
-                i18n.changeLanguage(state.language.value);
-              }
-              hotkeysManager.setHotkeys(state.hotkeyDefinitions);
-              hide();
-            },
-            onReset: () => hotkeysManager.restoreDefaultBindings(),
-            hotkeysModule: hotkeys,
-          },
+          content: UserPreferencesModal as React.ComponentType,
+          title: UserPreferencesModal.title ?? t('UserPreferencesModal:User preferences'),
+          containerClassName:
+            UserPreferencesModal?.containerClassName ?? 'flex max-w-4xl p-6 flex-col',
         }),
     },
   ];
@@ -523,7 +515,6 @@ function WorkList({
     });
   }
 
-  const { customizationService } = servicesManager.services;
   const LoadingIndicatorProgress = customizationService.getCustomization(
     'ui.loadingIndicatorProgress'
   );
@@ -533,6 +524,7 @@ function WorkList({
     DicomUploadComponent && dataSource.getConfig()?.dicomUploadEnabled
       ? {
           title: 'Upload files',
+          containerClassName: DicomUploadComponent?.containerClassName,
           closeButton: true,
           shouldCloseOnEsc: false,
           shouldCloseOnOverlayClick: false,

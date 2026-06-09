@@ -1,15 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { vec3 } from 'gl-matrix';
 import PropTypes from 'prop-types';
-import { metaData, Enums, utilities } from '@cornerstonejs/core';
+import { metaData, Enums, utilities, eventTarget } from '@cornerstonejs/core';
+import { Enums as csToolsEnums, UltrasoundPleuraBLineTool } from '@cornerstonejs/tools';
 import type { ImageSliceData } from '@cornerstonejs/core/types';
-import { ViewportOverlay } from '@ohif/ui';
+import { ViewportOverlay, formatDICOMDate } from '@ohif/ui-next';
 import type { InstanceMetadata } from '@ohif/core/src/types';
-import { formatDICOMDate, formatDICOMTime, formatNumberPrecision } from './utils';
+import { formatDICOMTime, formatNumberPrecision } from './utils';
 import { utils } from '@ohif/core';
 import { StackViewportData, VolumeViewportData } from '../../types/CornerstoneCacheService';
 
 import './CustomizableViewportOverlay.css';
+import { useViewportRendering } from '../../hooks';
 
 const EPSILON = 1e-4;
 const { formatPN } = utils;
@@ -65,8 +67,9 @@ function CustomizableViewportOverlay({
 }) {
   const { cornerstoneViewportService, customizationService, toolGroupService, displaySetService } =
     servicesManager.services;
-  const [voi, setVOI] = useState({ windowCenter: null, windowWidth: null });
   const [scale, setScale] = useState(1);
+  const [annotationState, setAnnotationState] = useState(0);
+  const { isViewportBackgroundLight: isLight, windowLevel: voi } = useViewportRendering(viewportId);
   const { imageIndex } = imageSliceData;
 
   // Historical usage defined the overlays as separate items due to lack of
@@ -106,30 +109,20 @@ function CustomizableViewportOverlay({
     };
   }, [viewportData, viewportId, instanceNumber, cornerstoneViewportService]);
 
-  /**
-   * Updating the VOI when the viewport changes its voi
-   */
+  const annotationModified = useCallback(evt => {
+    if (evt.detail.annotation.metadata.toolName === UltrasoundPleuraBLineTool.toolName) {
+      // Update the annotation state to trigger a re-render
+      setAnnotationState(prevState => prevState + 1);
+    }
+  }, []);
+
   useEffect(() => {
-    const updateVOI = eventDetail => {
-      const { range } = eventDetail.detail;
-
-      if (!range) {
-        return;
-      }
-
-      const { lower, upper } = range;
-      const { windowWidth, windowCenter } = utilities.windowLevel.toWindowLevel(lower, upper);
-
-      setVOI({ windowCenter, windowWidth });
-    };
-
-    element.addEventListener(Enums.Events.VOI_MODIFIED, updateVOI);
+    eventTarget.addEventListener(csToolsEnums.Events.ANNOTATION_MODIFIED, annotationModified);
 
     return () => {
-      element.removeEventListener(Enums.Events.VOI_MODIFIED, updateVOI);
+      eventTarget.removeEventListener(csToolsEnums.Events.ANNOTATION_MODIFIED, annotationModified);
     };
-  }, [viewportId, viewportData, voi, element]);
-
+  }, [annotationModified]);
   /**
    * Updating the scale when the viewport changes its zoom
    */
@@ -170,6 +163,7 @@ function CustomizableViewportOverlay({
         viewportId,
         servicesManager,
         customization: item,
+        isLight,
         formatters: {
           formatPN,
           formatDate: formatDICOMDate,
@@ -206,6 +200,8 @@ function CustomizableViewportOverlay({
       voi,
       scale,
       instanceNumber,
+      annotationState,
+      isLight,
     ]
   );
 
@@ -219,6 +215,7 @@ function CustomizableViewportOverlay({
         instanceNumber,
         viewportId,
         toolGroupService,
+        isLight,
       };
 
       return (
@@ -241,6 +238,8 @@ function CustomizableViewportOverlay({
       topRight={getContent(topRightCustomization, 'topRightOverlayItem')}
       bottomLeft={getContent(bottomLeftCustomization, 'bottomLeftOverlayItem')}
       bottomRight={getContent(bottomRightCustomization, 'bottomRightOverlayItem')}
+      color={isLight ? 'text-neutral-dark' : 'text-neutral-light'}
+      shadowClass={isLight ? 'shadow-light' : 'shadow-dark'}
     />
   );
 }
@@ -368,16 +367,18 @@ function OverlayItem(props) {
       title={title}
     >
       {label ? <span className="mr-1 shrink-0">{label}</span> : null}
-      <span className="ml-1 mr-2 shrink-0">{value}</span>
+      <span className="ml-0 shrink-0">{value}</span>
     </div>
   );
 }
 
 /**
  * Window Level / Center Overlay item
+ * //
  */
 function VOIOverlayItem({ voi, customization }: OverlayItemProps) {
   const { windowWidth, windowCenter } = voi;
+  const { title } = customization;
   if (typeof windowCenter !== 'number' || typeof windowWidth !== 'number') {
     return null;
   }
@@ -386,11 +387,12 @@ function VOIOverlayItem({ voi, customization }: OverlayItemProps) {
     <div
       className="overlay-item flex flex-row"
       style={{ color: customization?.color }}
+      title={title}
     >
-      <span className="mr-1 shrink-0">W:</span>
-      <span className="ml-1 mr-2 shrink-0">{windowWidth.toFixed(0)}</span>
-      <span className="mr-1 shrink-0">L:</span>
-      <span className="ml-1 shrink-0">{windowCenter.toFixed(0)}</span>
+      <span className="mr-0.5 shrink-0 opacity-[0.70]">W:</span>
+      <span className="mr-2.5 shrink-0">{windowWidth.toFixed(0)}</span>
+      <span className="mr-0.5 shrink-0 opacity-[0.70]">L:</span>
+      <span className="shrink-0">{windowCenter.toFixed(0)}</span>
     </div>
   );
 }
@@ -404,7 +406,7 @@ function ZoomOverlayItem({ scale, customization }: OverlayItemProps) {
       className="overlay-item flex flex-row"
       style={{ color: (customization && customization.color) || undefined }}
     >
-      <span className="mr-1 shrink-0">Zoom:</span>
+      <span className="mr-0.5 shrink-0 opacity-[0.70]">Zoom:</span>
       <span>{scale.toFixed(2)}x</span>
     </div>
   );
@@ -419,16 +421,18 @@ function InstanceNumberOverlayItem({
   customization,
 }: OverlayItemProps) {
   const { imageIndex, numberOfSlices } = imageSliceData;
+  const { title } = customization;
 
   return (
     <div
       className="overlay-item flex flex-row"
       style={{ color: (customization && customization.color) || undefined }}
+      title={title}
     >
       <span>
         {instanceNumber !== undefined && instanceNumber !== null ? (
           <>
-            <span className="mr-1 shrink-0">I:</span>
+            <span className="mr-0.5 shrink-0 opacity-[0.70]">I:</span>
             <span>{`${instanceNumber} (${imageIndex + 1}/${numberOfSlices})`}</span>
           </>
         ) : (

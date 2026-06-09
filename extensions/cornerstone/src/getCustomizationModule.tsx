@@ -6,26 +6,36 @@ import viewportClickCommandsCustomization from './customizations/viewportClickCo
 import measurementsCustomization from './customizations/measurementsCustomization';
 import volumeRenderingCustomization from './customizations/volumeRenderingCustomization';
 import colorbarCustomization from './customizations/colorbarCustomization';
+import modalityColorMapCustomization from './customizations/modalityColorMapCustomization';
 import windowLevelPresetsCustomization from './customizations/windowLevelPresetsCustomization';
 import miscCustomization from './customizations/miscCustomization';
-import windowLevelActionMenuCustomization from './customizations/windowLevelActionMenuCustomization';
+import captureViewportModalCustomization from './customizations/captureViewportModalCustomization';
+import viewportDownloadWarningCustomization from './customizations/viewportDownloadWarningCustomization';
+import getViewportScrollbarCustomization from './customizations/viewportScrollbarCustomization';
 
-function getCustomizationModule({ commandsManager, servicesManager }) {
+function getCustomizationModule({ commandsManager, servicesManager, extensionManager }) {
   return [
     {
       name: 'default',
       value: {
         ...viewportOverlayCustomization,
-        ...getSegmentationPanelCustomization({ commandsManager, servicesManager }),
+        ...getSegmentationPanelCustomization({
+          commandsManager,
+          servicesManager,
+          extensionManager,
+        }),
         ...layoutSelectorCustomization,
         ...viewportToolsCustomization,
         ...viewportClickCommandsCustomization,
         ...measurementsCustomization,
         ...volumeRenderingCustomization,
         ...colorbarCustomization,
+        ...modalityColorMapCustomization,
         ...windowLevelPresetsCustomization,
         ...miscCustomization,
-        ...windowLevelActionMenuCustomization,
+        ...captureViewportModalCustomization,
+        ...viewportDownloadWarningCustomization,
+        ...getViewportScrollbarCustomization(),
       },
     },
   ];

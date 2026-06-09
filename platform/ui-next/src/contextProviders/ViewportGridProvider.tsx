@@ -124,6 +124,8 @@ interface ViewportGridApi {
   getActiveViewportOptionByKey: (key: string) => any;
   setViewportGridSizeChanged: (props: any) => void;
   publishViewportsReady: () => void;
+  getDisplaySetsUIDsForViewport: (viewportId: string) => string[];
+  isReferenceViewable: (viewportId: string, viewRef, options?) => boolean;
 }
 
 // Update the context type
@@ -402,8 +404,17 @@ export function ViewportGridProvider({ children, service }: ViewportGridProvider
 
   const getGridViewportsReady = useCallback(() => {
     const { viewports } = viewportGridState;
-    const readyViewports = Array.from(viewports.values()).filter(viewport => viewport.isReady);
-    return readyViewports.length === viewports.size;
+    // Filter viewports that have display sets (i.e., have content to display)
+    const viewportsWithContent = Array.from(viewports.values()).filter(
+      viewport => viewport.displaySetInstanceUIDs?.length > 0
+    );
+    // If there are no viewports with content, return false
+    if (viewportsWithContent.length === 0) {
+      return false;
+    }
+    // Check if all viewports with content are ready
+    const readyViewports = viewportsWithContent.filter(viewport => viewport.isReady);
+    return readyViewports.length === viewportsWithContent.length;
   }, [viewportGridState]);
 
   const setLayout = useCallback(
@@ -449,6 +460,14 @@ export function ViewportGridProvider({ children, service }: ViewportGridProvider
     [dispatch]
   );
 
+  const getViewportState = useCallback(
+    viewportId => {
+      const { viewports } = viewportGridState;
+      return viewports.get(viewportId);
+    },
+    [viewportGridState]
+  );
+
   const getNumViewportPanes = useCallback(() => {
     const { layout, viewports } = viewportGridState;
     const { numRows, numCols } = layout;
@@ -466,12 +485,14 @@ export function ViewportGridProvider({ children, service }: ViewportGridProvider
         getState,
         setActiveViewportId,
         setDisplaySetsForViewports,
+        isReferenceViewable: () => false,
         setLayout,
         reset,
         onModeExit: reset,
         set,
         getNumViewportPanes,
         setViewportIsReady,
+        getViewportState,
         getGridViewportsReady,
       });
     }
@@ -486,6 +507,7 @@ export function ViewportGridProvider({ children, service }: ViewportGridProvider
     getNumViewportPanes,
     setViewportIsReady,
     getGridViewportsReady,
+    getViewportState,
   ]);
 
   // run many of the calls through the service itself since we want to publish events
@@ -494,7 +516,10 @@ export function ViewportGridProvider({ children, service }: ViewportGridProvider
     setActiveViewportId: index => service.setActiveViewportId(index),
     setDisplaySetsForViewport: props => service.setDisplaySetsForViewports([props]),
     setDisplaySetsForViewports: props => service.setDisplaySetsForViewports(props),
+    isReferenceViewable: (viewportId, isReferenceViewable, options) =>
+      service.isReferenceViewable(viewportId, isReferenceViewable, options),
     setLayout: layout => service.setLayout(layout),
+    getViewportState: viewportId => service.getViewportState(viewportId),
     reset: () => service.reset(),
     set: gridLayoutState => service.setState(gridLayoutState), // run it through the service itself since we want to publish events
     getNumViewportPanes,
@@ -503,6 +528,8 @@ export function ViewportGridProvider({ children, service }: ViewportGridProvider
     getActiveViewportOptionByKey,
     setViewportGridSizeChanged: props => service.setViewportGridSizeChanged(props),
     publishViewportsReady: () => service.publishViewportsReady(),
+    getLayoutOptionsFromState: state => service.getLayoutOptionsFromState(state),
+    getDisplaySetsUIDsForViewport: viewportId => service.getDisplaySetsUIDsForViewport(viewportId),
   };
 
   return (
