@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import { useViewportGrid, PanelSection } from '@ohif/ui-next';
 import { useActiveViewportDisplaySets } from '@ohif/core';
 import { StackViewport, Types } from '@cornerstonejs/core';
-import { nonWLModalities } from '../WindowLevelActionMenu/WindowLevelActionMenu';
+// Modalities that don't support W/L and therefore don't use colormaps
+const NON_WL_MODALITIES = ['SR', 'SEG', 'RTSTRUCT', 'OT', 'DOC'];
 
 const ActiveViewportColormap = ({ servicesManager, commandsManager }: withAppTypes): ReactElement => {
   const [viewportGrid] = useViewportGrid();
@@ -13,7 +14,7 @@ const ActiveViewportColormap = ({ servicesManager, commandsManager }: withAppTyp
   const { colormaps = [] } = customizationService.getCustomization('cornerstone.colorbar') ?? {};
 
   const eligibleDisplaySets = useMemo(
-    () => displaySets.filter(displaySet => !nonWLModalities.includes(displaySet.Modality)),
+    () => displaySets.filter(displaySet => !NON_WL_MODALITIES.includes(displaySet.Modality)),
     [displaySets]
   );
 

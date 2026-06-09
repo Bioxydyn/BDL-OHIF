@@ -28,6 +28,11 @@ function applyDefaultKtransColormap({ servicesManager, viewportId }: withAppType
     return;
   }
 
+  const cornerstoneViewport = cornerstoneViewportService.getCornerstoneViewport(targetViewportId);
+  if (!cornerstoneViewport || !cornerstoneViewport.getActors?.()?.length) {
+    return;
+  }
+
   const existingLutPresentation = cornerstoneViewportService.getPresentations(targetViewportId)?.lutPresentation;
   const existingProperties = existingLutPresentation?.properties;
   const existingColormap = existingProperties instanceof Map ? undefined : existingProperties?.colormap;
